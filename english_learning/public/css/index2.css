@@ -1,0 +1,49 @@
+.hero {
+  background: url('/assets/english_learning/images/banner.jpg') no-repeat center center/cover;
+  color: white;
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.hero h1 {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.hero-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 18px;
+}
+
+.hero-btn:hover {
+  background-color: #0056b3;
+}
+
+.block {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.block:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+footer.footer {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+footer.footer p {
+  margin: 5px 0;
+}

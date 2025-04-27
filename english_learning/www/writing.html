@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Luyện Viết - ENGMENA</title>
+  <link rel="stylesheet" href="/assets/english_learning/css/writing.css">
+</head>
+
+<body>
+
+<!-- Back Button -->
+<button class="back-btn" onclick="window.location.href='/index2'">⬅️ Quay lại</button>
+
+<div class="container">
+  <h1 class="main-title">
+    Luyện Viết 📝
+  </h1>
+
+  <!-- Div 1: Đề bài và nhập bài -->
+  <div class="writing-section">
+    <h2>Đề bài</h2>
+    <p>Viết một đoạn văn từ 80-100 từ về chủ đề: <strong>"Vai trò của tiếng Anh trong công việc tương lai của bạn"</strong>.</p>
+    <textarea id="baiViet" placeholder="Nhập bài viết của bạn ở đây..."></textarea>
+  </div>
+
+  <!-- Div 2: Hiển thị bài viết -->
+  <div class="writing-section">
+    <h2>Bài viết của bạn</h2>
+    <div class="preview-box" id="previewContent">
+      (Nội dung bài viết sẽ hiển thị ở đây sau khi bạn nhập)
+    </div>
+    <button class="submit-btn" onclick="nopBai()">Nộp bài</button>
+  </div>
+</div>
+
+<script src="/assets/english_learning/js/writing.js"></script>
+</body>
+</html>

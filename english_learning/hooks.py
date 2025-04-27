@@ -1,5 +1,5 @@
 app_name = "english_learning"
-app_title = "English Learning Website"
+app_title = "English Learning Web"
 app_publisher = "group qlda"
 app_description = "Website học tiếng anh"
 app_email = "biobenlaos@gmail.com"
@@ -30,7 +30,7 @@ app_license = "mit"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/english_learning/css/english_learning.css"
-# web_include_js = "/assets/english_learning/js/english_learning.js"
+web_include_js = "/assets/js/english_learning.js"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "english_learning/public/scss/website"
@@ -236,4 +236,6 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+
 

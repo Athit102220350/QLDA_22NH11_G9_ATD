@@ -1,0 +1,98 @@
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  margin: 0;
+  padding: 0;
+}
+
+.back-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.back-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Advice Container */
+.advice-container {
+  max-width: 1200px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+/* Header Section */
+.advice-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.advice-header h1 {
+  font-size: 36px;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+.advice-header p {
+  font-size: 18px;
+  color: #555;
+}
+
+/* Advice Section */
+.advice-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.advice-card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  flex: 1 1 calc(33.333% - 20px); /* Responsive: 3 cards per row */
+  max-width: calc(33.333% - 20px);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.advice-card h2 {
+  font-size: 24px;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+.advice-card p {
+  font-size: 16px;
+  color: #555;
+}
+
+.advice-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .advice-card {
+    flex: 1 1 calc(50% - 20px); /* 2 cards per row on smaller screens */
+    max-width: calc(50% - 20px);
+  }
+}
+
+@media (max-width: 480px) {
+  .advice-card {
+    flex: 1 1 100%; /* 1 card per row on very small screens */
+    max-width: 100%;
+  }
+}

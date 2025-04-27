@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tư Vấn - ENGMENA</title>
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .back-btn:hover {
+      background-color: #0056b3;
+    }
+
+    /* Advice Container */
+    .advice-container {
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    /* Header Section */
+    .advice-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .advice-header h1 {
+      font-size: 36px;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+
+    .advice-header p {
+      font-size: 18px;
+      color: #555;
+    }
+
+    /* Advice Section */
+    .advice-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .advice-card {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      flex: 1 1 calc(33.333% - 20px); /* Responsive: 3 cards per row */
+      max-width: calc(33.333% - 20px);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .advice-card h2 {
+      font-size: 24px;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+
+    .advice-card p {
+      font-size: 16px;
+      color: #555;
+    }
+
+    .advice-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .advice-card {
+        flex: 1 1 calc(50% - 20px); /* 2 cards per row on smaller screens */
+        max-width: calc(50% - 20px);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .advice-card {
+        flex: 1 1 100%; /* 1 card per row on very small screens */
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Back Button -->
+<button class="back-btn" onclick="window.location.href='/index2'">⬅️ Quay lại</button>
+
+<div class="advice-container">
+  <!-- Header Section -->
+  <header class="advice-header">
+    <h1>Tư Vấn Học Tập</h1>
+    <p>Nhận lời khuyên và lộ trình học tập phù hợp với bạn.</p>
+  </header>
+
+  <!-- Advice Form -->
+  <section class="advice-form">
+    <form id="adviceForm" style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+      <div style="margin-bottom: 15px;">
+        <label for="name" style="display: block; font-weight: bold; margin-bottom: 5px;">Họ và tên:</label>
+        <input type="text" id="name" name="name" placeholder="Nhập họ và tên của bạn" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label for="email" style="display: block; font-weight: bold; margin-bottom: 5px;">Email:</label>
+        <input type="email" id="email" name="email" placeholder="Nhập email của bạn" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label for="goal" style="display: block; font-weight: bold; margin-bottom: 5px;">Mục tiêu học tập:</label>
+        <textarea id="goal" name="goal" placeholder="Nhập mục tiêu học tập của bạn" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; height: 100px;"></textarea>
+      </div>
+      <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Gửi yêu cầu</button>
+    </form>
+  </section>
+
+  <!-- Success Message -->
+  <div id="successMessage" style="display: none; text-align: center; margin-top: 20px; color: green; font-weight: bold;">
+    Cảm ơn bạn đã gửi yêu cầu! Chúng tôi sẽ liên hệ với bạn sớm nhất.
+  </div>
+
+  <!-- Advice Section -->
+  <section class="advice-section">
+    <div class="advice-card">
+      <h2>Lộ trình học tập</h2>
+      <p>Chúng tôi sẽ giúp bạn xây dựng lộ trình học tập cá nhân hóa dựa trên mục tiêu của bạn.</p>
+    </div>
+    <div class="advice-card">
+      <h2>Hỗ trợ cá nhân</h2>
+      <p>Nhận hỗ trợ từ đội ngũ chuyên gia để giải đáp thắc mắc và cải thiện kỹ năng.</p>
+    </div>
+    <div class="advice-card">
+      <h2>Phương pháp học hiệu quả</h2>
+      <p>Áp dụng các phương pháp học hiện đại để đạt kết quả tốt nhất.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.getElementById('adviceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('adviceForm').style.display = 'none';
+    document.getElementById('successMessage').style.display = 'block';
+  });
+</script>
+
+</body>
+</html>

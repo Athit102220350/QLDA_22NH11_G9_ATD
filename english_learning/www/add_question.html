@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thêm Câu Hỏi - ENGMENA</title>
+  <link rel="stylesheet" href="/assets/english_learning/css/baitap2.css">
+  <style>
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .form-group button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .form-group button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Thêm Câu Hỏi</h2>
+  <form id="addQuestionForm">
+    <div class="form-group">
+      <label for="newQuestionText">Câu hỏi:</label>
+      <input type="text" id="newQuestionText" placeholder="Nhập câu hỏi" required>
+    </div>
+    <div class="form-group">
+      <label for="newOptions">Đáp án (phân cách bằng dấu phẩy):</label>
+      <input type="text" id="newOptions" placeholder="Nhập các đáp án" required>
+    </div>
+    <div class="form-group">
+      <label for="newCorrectAnswer">Đáp án đúng:</label>
+      <input type="text" id="newCorrectAnswer" placeholder="Nhập đáp án đúng" required>
+    </div>
+    <div class="form-group">
+      <button type="button" onclick="themCauHoi()">Thêm câu hỏi</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  function themCauHoi() {
+    const questionText = document.getElementById("newQuestionText").value.trim();
+    const options = document.getElementById("newOptions").value.split(",").map(opt => opt.trim());
+    const correctAnswer = document.getElementById("newCorrectAnswer").value.trim();
+
+    if (!questionText || options.length === 0 || !correctAnswer) {
+      alert("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
+    if (!options.includes(correctAnswer)) {
+      alert("Đáp án đúng phải nằm trong danh sách các đáp án!");
+      return;
+    }
+
+    // Lấy danh sách câu hỏi từ localStorage
+    const cauHoi = JSON.parse(localStorage.getItem("cauHoi")) || [];
+
+    // Kiểm tra nếu đã có 10 câu hỏi
+    if (cauHoi.length >= 10) {
+      alert("Bạn chỉ có thể thêm tối đa 10 câu hỏi!");
+      return;
+    }
+
+    // Thêm câu hỏi mới vào danh sách
+    cauHoi.push({ text: questionText, options, correct: correctAnswer });
+    localStorage.setItem("cauHoi", JSON.stringify(cauHoi));
+
+    alert("✅ Đã thêm câu hỏi mới!");
+    window.location.href = "/baitap2"; // Quay lại trang bài tập
+  }
+</script>
+
+</body>
+</html>

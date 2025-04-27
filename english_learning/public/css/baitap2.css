@@ -1,0 +1,142 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    padding: 30px;
+    margin: 0;
+  }
+  .container {
+    max-width: 800px;
+    margin: auto;
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  }
+  .question-header {
+    font-size: 20px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 20px;
+  }
+  .exercise-box {
+    background-color: #e0e0e0;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  .options button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #dcdcdc;
+    transition: background-color 0.2s ease;
+  }
+  .options button:hover {
+    background-color: #c0c0c0;
+  }
+  .options button.selected {
+    background-color: #007bff;
+    color: white;
+  }
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .submit-area {
+    text-align: center;
+  }
+  .buttons button,
+  .submit-area button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .prev-btn { background-color: #6c757d; color: white; }
+  .next-btn { background-color: #007bff; color: white; }
+  .submit-btn { background-color: #28a745; color: white; }
+  .cancel-btn { background-color: #dc3545; color: white; }
+  button:hover {
+    opacity: 0.9;
+  }
+
+form#crudForm {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+form#crudForm div {
+  margin-bottom: 15px;
+}
+
+form#crudForm label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+form#crudForm input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form#crudForm button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+form#crudForm button:hover {
+  background-color: #0056b3;
+}
+
+#questionList {
+  list-style: none;
+  padding: 0;
+}
+
+#questionList li {
+  padding: 10px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#questionList li button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#questionList li button:hover {
+  background-color: #c82333;
+}

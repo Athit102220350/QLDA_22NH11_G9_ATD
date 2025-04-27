@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bài Tập 2 - ENGMENA</title>
+  <link rel="stylesheet" href="/assets/english_learning/css/baitap2.css">
+  <style>
+    .back-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .back-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .question-header {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .exercise-box {
+      margin-bottom: 20px;
+    }
+
+    .options button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .options button.selected {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .buttons, .submit-area {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .buttons button, .submit-area button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .prev-btn, .cancel-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .next-btn, .submit-btn {
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Back Button -->
+<button class="back-btn" onclick="window.location.href='/index2'">⬅️ Quay lại</button>
+
+<div class="container">
+  <div class="question-header">
+    Câu <span id="currentQuestion">1</span>/<span id="totalQuestions">10</span>
+  </div>
+
+  <div class="exercise-box" id="questionBox">
+    <!-- Nội dung câu hỏi sẽ được tạo động -->
+  </div>
+
+  <div class="buttons">
+    <button class="prev-btn" onclick="cauTruoc()">⬅️ Câu trước</button>
+    <button class="next-btn" onclick="cauTiepTheo()">Câu tiếp ➡️</button>
+  </div>
+
+  <div class="submit-area">
+    <button class="submit-btn" onclick="nopBai()"> Nộp bài</button>
+    <button class="cancel-btn" onclick="huyBai()"> Hủy bài tập</button>
+  </div>
+</div>
+
+<script src="/assets/english_learning/js/baitap2.js"></script>
+</body>
+</html>
