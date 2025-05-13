@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - English Learning{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto text-center">
+        <h1 class="display-4 my-5">Welcome to English Learning Website</h1>
+        <p class="lead mb-4">
+            Improve your English skills with our interactive platform and AI-powered chatbot.
+            Get real-time feedback on your grammar, vocabulary, and more!
+        </p>
+        <div class="row mt-5">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Grammar</h4>
+                        <p class="card-text">Learn proper English grammar with immediate feedback on your writing.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Vocabulary</h4>
+                        <p class="card-text">Expand your vocabulary with context-based learning and examples.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Practice</h4>
+                        <p class="card-text">Practice conversations with our AI chatbot for real-time feedback.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-5">
+            <a href="{% url 'chatbot' %}" class="btn btn-primary btn-lg">Start Chatting!</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
