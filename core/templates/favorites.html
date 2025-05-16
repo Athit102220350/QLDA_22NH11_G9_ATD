@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}My Vocabulary - English Learning Website{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Navigation</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
+                <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Profile</a>
+                <a href="{% url 'favorites' %}" class="list-group-item list-group-item-action active">My Vocabulary</a>
+                <a href="{% url 'progress' %}" class="list-group-item list-group-item-action">Learning Progress</a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Filter Words</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="search" class="form-label">Search:</label>
+                    <input type="text" id="search" class="form-control" placeholder="Type to search...">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Status:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="status-filter" id="filter-all" value="all" checked>
+                        <label class="form-check-label" for="filter-all">
+                            All Words
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="status-filter" id="filter-mastered" value="mastered">
+                        <label class="form-check-label" for="filter-mastered">
+                            Mastered Only
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="status-filter" id="filter-learning" value="learning">
+                        <label class="form-check-label" for="filter-learning">
+                            Still Learning
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="sort" class="form-label">Sort By:</label>
+                    <select id="sort" class="form-select">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="alphabetical">Alphabetical</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">My Vocabulary List</h3>
+                <span class="badge bg-white text-primary">{{ saved_words.count }} words</span>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if saved_words %}
+                    <div id="vocabulary-list">
+                        <div class="row">
+                            {% for word in saved_words %}
+                                <div class="col-md-6 mb-3 word-item" 
+                                     data-word="{{ word.word }}" 
+                                     data-mastered="{{ word.mastered|lower }}"
+                                     data-date="{{ word.date_added|date:'U' }}">
+                                    <div class="card h-100 {% if word.mastered %}border-success{% endif %}">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">{{ word.word }}</h5>
+                                            <div>
+                                                {% if word.mastered %}
+                                                    <span class="badge bg-success">Mastered</span>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-danger delete-word" data-id="{{ word.id }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <p><strong>Definition:</strong> {{ word.definition }}</p>
+                                            {% if word.example %}
+                                                <p><strong>Example:</strong> <em>{{ word.example }}</em></p>
+                                            {% endif %}
+                                            <p class="text-muted"><small>Added on {{ word.date_added|date:"F j, Y" }}</small></p>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-sm btn-outline-primary toggle-mastered" data-id="{{ word.id }}">
+                                                {% if word.mastered %}
+                                                    <i class="bi bi-x-circle"></i> Mark as Not Mastered
+                                                {% else %}
+                                                    <i class="bi bi-check-circle"></i> Mark as Mastered
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p>You haven't saved any vocabulary words yet. To add words to your list:</p>
+                        <ol>
+                            <li>Use the Chatbot to lookup vocabulary words</li>
+                            <li>Visit the Vocabulary page to explore words</li>
+                            <li>Click "Save to My Vocabulary" when you find words you want to learn</li>
+                        </ol>
+                        <div class="text-center mt-3">
+                            <a href="{% url 'vocabulary' %}" class="btn btn-primary">
+                                <i class="bi bi-journal-text"></i> Go to Vocabulary Page
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search');
+        const statusFilters = document.querySelectorAll('input[name="status-filter"]');
+        const sortSelect = document.getElementById('sort');
+        const wordItems = document.querySelectorAll('.word-item');
+        
+        // Filter and sort function
+        function filterAndSortWords() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusFilter = document.querySelector('input[name="status-filter"]:checked').value;
+            const sortBy = sortSelect.value;
+            
+            // Create an array from the word items for sorting
+            const wordItemsArray = Array.from(wordItems);
+            
+            // Sort the array
+            if (sortBy === 'newest') {
+                wordItemsArray.sort((a, b) => {
+                    return parseInt(b.dataset.date) - parseInt(a.dataset.date);
+                });
+            } else if (sortBy === 'oldest') {
+                wordItemsArray.sort((a, b) => {
+                    return parseInt(a.dataset.date) - parseInt(b.dataset.date);
+                });
+            } else if (sortBy === 'alphabetical') {
+                wordItemsArray.sort((a, b) => {
+                    return a.dataset.word.localeCompare(b.dataset.word);
+                });
+            }
+            
+            // Process each word item
+            wordItemsArray.forEach(item => {
+                const word = item.dataset.word.toLowerCase();
+                const isMastered = item.dataset.mastered === 'true';
+                
+                // Check if it matches the search
+                const matchesSearch = word.includes(searchTerm);
+                
+                // Check if it matches the status filter
+                let matchesFilter = true;
+                if (statusFilter === 'mastered') {
+                    matchesFilter = isMastered;
+                } else if (statusFilter === 'learning') {
+                    matchesFilter = !isMastered;
+                }
+                
+                // Show/hide based on filters
+                if (matchesSearch && matchesFilter) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Re-append in sorted order
+            const container = document.querySelector('#vocabulary-list .row');
+            wordItemsArray.forEach(item => {
+                container.appendChild(item);
+            });
+        }
+        
+        // Add event listeners
+        searchInput.addEventListener('input', filterAndSortWords);
+        statusFilters.forEach(filter => {
+            filter.addEventListener('change', filterAndSortWords);
+        });
+        sortSelect.addEventListener('change', filterAndSortWords);
+        
+        // Toggle word mastered status
+        const toggleButtons = document.querySelectorAll('.toggle-mastered');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const wordId = this.dataset.id;
+                
+                fetch('{% url "mark_word_mastered" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ word_id: wordId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to show updated status
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            });
+        });
+        
+        // Delete word
+        const deleteButtons = document.querySelectorAll('.delete-word');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (confirm('Are you sure you want to remove this word from your vocabulary list?')) {
+                    const wordId = this.dataset.id;
+                    
+                    fetch('{% url "delete_saved_word" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify({ word_id: wordId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the word card from the DOM
+                            this.closest('.word-item').remove();
+                            alert(data.message);
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -18,7 +18,7 @@
         margin-bottom: 1rem;
         padding: 0.75rem;
         border-radius: 0.5rem;
-        max-width: 75%;
+        max-width: 80%;
     }
     
     .user-message {
@@ -30,49 +30,166 @@
     .bot-message {
         background-color: #e2e3e5;
     }
+    
+    .grammar-correction {
+        background-color: #d4edda;
+        border-left: 4px solid #28a745;
+    }
+    
+    .vocabulary-info {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .highlight {
+        background-color: #ffecb3;
+        padding: 0 3px;
+        border-radius: 3px;
+    }
+    
+    #message-type-buttons {
+        margin-bottom: 10px;
+    }
+    
+    #message-type-buttons .btn {
+        margin-right: 5px;
+    }
+    
+    .save-word-btn {
+        cursor: pointer;
+        color: #0d6efd;
+    }
+    
+    .save-word-btn:hover {
+        text-decoration: underline;
+    }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 {% endblock %}
 
 {% block content %}
 <div class="row">
+    
     <div class="col-lg-8 mx-auto">
         <h1 class="text-center mb-4">English Learning Chatbot</h1>
-        <p class="text-center mb-4">
+        <p class="text-center mb-3">
             Chat with our AI assistant to improve your English skills. 
-            Try typing sentences with grammar mistakes to see corrections.
+            Try typing sentences with grammar mistakes, asking for word definitions, or finding better alternatives.
         </p>
+        
+        <div id="message-type-buttons" class="text-center mb-3">
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="message-type" id="grammar-check" value="grammar" checked>
+                <label class="btn btn-outline-primary" for="grammar-check">Grammar Check</label>
+                
+                <input type="radio" class="btn-check" name="message-type" id="vocabulary-lookup" value="vocabulary">
+                <label class="btn btn-outline-primary" for="vocabulary-lookup">Vocabulary Lookup</label>
+                
+                <input type="radio" class="btn-check" name="message-type" id="word-alternatives" value="alternatives">
+                <label class="btn btn-outline-primary" for="word-alternatives">Word Alternatives</label>
+            </div>
+            
+            <div class="mt-2 format-help" id="format-help-alternatives" style="display: none;">
+                <small class="text-muted">Format: "word in context sentence"</small>
+            </div>
+        </div>
         
         <div class="chat-container mb-3" id="chat-container">
             <div class="message bot-message">
-                <strong>English Tutor:</strong> Hello! I'm your English tutor. Type something and I'll help you with grammar and vocabulary.
+                <strong>English Tutor:</strong> Hello! I'm your English tutor. How can I help you today?
+                <ul>
+                    <li>Type a sentence for grammar correction</li>
+                    <li>Switch to "Vocabulary Lookup" to get word definitions</li>
+                    <li>Switch to "Word Alternatives" to find better word choices</li>
+                </ul>
             </div>
         </div>
         
         <div class="input-group mb-3">
             <input type="text" id="user-input" class="form-control" placeholder="Type your message here...">
-            <button class="btn btn-primary" id="send-btn">Send</button>
+            <button class="btn btn-primary" id="send-btn">
+                <i class="bi bi-send"></i> Send
+            </button>
         </div>
         
         <div class="card mt-4">
-            <div class="card-header">
+            <div class="card-header bg-primary text-white">
                 Example phrases to try:
             </div>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item">I goed to the store yesterday.</li>
-                <li class="list-group-item">She have a new car.</li>
-                <li class="list-group-item">They was happy about the news.</li>
+                <li class="list-group-item">
+                    <strong>Grammar:</strong> I goed to the store yesterday.
+                    <button class="btn btn-sm btn-outline-primary float-end try-example">Try</button>
+                </li>
+                <li class="list-group-item">
+                    <strong>Vocabulary:</strong> ameliorate
+                    <button class="btn btn-sm btn-outline-primary float-end try-example">Try</button>
+                </li>
+                <li class="list-group-item">
+                    <strong>Alternatives:</strong> good in That movie was good.
+                    <button class="btn btn-sm btn-outline-primary float-end try-example">Try</button>
+                </li>
             </ul>
         </div>
     </div>
 </div>
+
+{% csrf_token %}
 {% endblock %}
 
 {% block extra_js %}
+
 <script>
+    
     document.addEventListener('DOMContentLoaded', function() {
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
+        const messageTypeButtons = document.querySelectorAll('input[name="message-type"]');
+        const formatHelpAlternatives = document.getElementById('format-help-alternatives');
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        
+        // Toggle format help based on message type
+        messageTypeButtons.forEach(button => {
+            button.addEventListener('change', function() {
+                if (this.value === 'alternatives') {
+                    formatHelpAlternatives.style.display = 'block';
+                } else {
+                    formatHelpAlternatives.style.display = 'none';
+                }
+                
+                // Update placeholder text based on message type
+                if (this.value === 'vocabulary') {
+                    userInput.placeholder = "Enter a word to lookup...";
+                } else if (this.value === 'alternatives') {
+                    userInput.placeholder = "Enter a word in context (e.g., 'good in That was a good movie')";
+                } else {
+                    userInput.placeholder = "Type your message here...";
+                }
+            });
+        });
+        
+        // Handle example buttons
+        document.querySelectorAll('.try-example').forEach(button => {
+            button.addEventListener('click', function() {
+                const exampleText = this.parentNode.textContent.trim().split(':')[1].split('Try')[0].trim();
+                
+                // Set the appropriate message type based on the example
+                if (this.parentNode.textContent.includes('Grammar:')) {
+                    document.getElementById('grammar-check').checked = true;
+                    formatHelpAlternatives.style.display = 'none';
+                } else if (this.parentNode.textContent.includes('Vocabulary:')) {
+                    document.getElementById('vocabulary-lookup').checked = true;
+                    formatHelpAlternatives.style.display = 'none';
+                } else if (this.parentNode.textContent.includes('Alternatives:')) {
+                    document.getElementById('word-alternatives').checked = true;
+                    formatHelpAlternatives.style.display = 'block';
+                }
+                
+                userInput.value = exampleText;
+                userInput.focus();
+            });
+        });
         
         function addMessage(text, isUser) {
             const messageDiv = document.createElement('div');
@@ -88,11 +205,192 @@
             
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return messageDiv;
+        }
+        
+        function addGrammarCorrection(original, corrected, explanation, hasErrors) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'bot-message', 'grammar-correction');
+            
+            let content = '<strong>Grammar Check:</strong>';
+            
+            if (hasErrors) {
+                content += `
+                    <div class="mt-2">
+                        <p><strong>Original:</strong> ${original}</p>
+                        <p><strong>Corrected:</strong> ${corrected}</p>
+                        <p><strong>Explanation:</strong> ${explanation}</p>
+                    </div>`;
+            } else {
+                content += `
+                    <div class="mt-2">
+                        <p>Your grammar is correct! 👍</p>
+                        <p><strong>Sentence:</strong> ${corrected}</p>
+                    </div>`;
+            }
+            
+            messageDiv.innerHTML = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+function addVocabularyInfo(word, definition, example, synonyms) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', 'bot-message', 'vocabulary-info');
+    
+    // Generate a unique ID for this word entry
+    const wordId = 'word_' + Math.random().toString(36).substr(2, 9);
+    
+    // Store the data in a hidden field or in a JavaScript object
+    window.vocabularyData = window.vocabularyData || {};
+    window.vocabularyData[wordId] = {
+        word: word,
+        definition: definition,
+        example: example || ''
+    };
+    
+    // Check if user is authenticated (set by server)
+    // Convert the string 'true'/'false' to actual boolean
+    const isUserAuthenticated = "{{ user.is_authenticated|lower }}" === "true";
+    
+    let content = `<strong>Vocabulary:</strong>
+        <div class="mt-2">
+            <h5>${word}`;
+            
+    // Only add save button if user is authenticated
+    if (isUserAuthenticated) {
+        content += `<i class="bi bi-bookmark-plus save-word-btn" 
+                      title="Save to My Vocabulary"
+                      data-word-id="${wordId}"></i>`;
+    }
+    
+    content += `</h5>
+            <p><strong>Definition:</strong> ${definition}</p>`;
+    
+    if (example) {
+        content += `<p><strong>Example:</strong> <em>${example}</em></p>`;
+    }
+    
+    if (synonyms && synonyms.length > 0) {
+        content += `<p><strong>Synonyms:</strong> ${synonyms.join(', ')}</p>`;
+    }
+    content += '</div>';
+    
+    messageDiv.innerHTML = content;
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Add event listener for save button if user is authenticated
+    if (isUserAuthenticated) {
+        const saveBtn = messageDiv.querySelector('.save-word-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                const data = window.vocabularyData[this.dataset.wordId];
+                saveVocabularyWord(data.word, data.definition, data.example);
+            });
+        }
+    }
+}
+        function addAlternativesInfo(word, context, alternatives) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'bot-message');
+            
+            let content = `<strong>Word Alternatives:</strong>
+                <div class="mt-2">
+                    <p>Alternative words for <span class="highlight">${word}</span> in context:</p>`;
+            
+            if (alternatives && alternatives.length > 0) {
+                content += '<ul>';
+                alternatives.forEach(alt => {
+                    content += `<li>${alt}</li>`;
+                });
+                content += '</ul>';
+                
+                // Show the context with highlighted word
+                const highlightedContext = context.replace(
+                    new RegExp(`\\b${word}\\b`, 'gi'), 
+                    `<span class="highlight">${word}</span>`
+                );
+                content += `<p><strong>Original:</strong> ${highlightedContext}</p>`;
+                
+                // Show example with first alternative
+                if (alternatives.length > 0) {
+                    const alternativeContext = context.replace(
+                        new RegExp(`\\b${word}\\b`, 'gi'), 
+                        `<span class="highlight">${alternatives[0]}</span>`
+                    );
+                    content += `<p><strong>Example:</strong> ${alternativeContext}</p>`;
+                }
+            } else {
+                content += '<p>No alternatives found for this word and context.</p>';
+            }
+            
+            content += '</div>';
+            
+            messageDiv.innerHTML = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Define saveVocabularyWord function that will check auth status internally
+        function saveVocabularyWord(word, definition, example) {
+            const isUserAuthenticated = "{{ user.is_authenticated|lower }}" === "true";
+            
+            if (!isUserAuthenticated) {
+                console.log('User not authenticated. Cannot save vocabulary word.');
+                alert('Please log in to save words to your vocabulary.');
+                return;
+            }
+            
+            // Continue only if authenticated
+            fetch('{% url "save_vocabulary_word" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    word: word,
+                    definition: definition,
+                    example: example
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message', 'bot-message');
+                    messageDiv.innerHTML = `<strong>System:</strong> ${data.message}`;
+                    chatContainer.appendChild(messageDiv);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    
+                    // Update icon - use data-word-id instead
+                    document.querySelectorAll(`.save-word-btn[data-word-id]`).forEach(btn => {
+                        const btnWordId = btn.dataset.wordId;
+                        if (window.vocabularyData[btnWordId].word === word) {
+                            btn.classList.remove('bi-bookmark-plus');
+                            btn.classList.add('bi-bookmark-check-fill');
+                            btn.style.color = '#28a745';
+                            btn.title = 'Saved to My Vocabulary';
+                        }
+                    });
+                } else {
+                    console.error('Error saving word:', data.error);
+                    alert('Error saving word: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the word.');
+            });
         }
         
         function sendMessage() {
             const message = userInput.value.trim();
             if (!message) return;
+            
+            const messageType = document.querySelector('input[name="message-type"]:checked').value;
             
             addMessage(message, true);
             userInput.value = '';
@@ -102,15 +400,41 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify({ message: message, type: messageType })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.response) {
-                    addMessage(data.response, false);
-                } else if (data.error) {
+                if (data.error) {
                     addMessage('Sorry, I encountered an error: ' + data.error, false);
+                    return;
+                }
+                
+                // Handle different response types
+                if (data.response_type === 'grammar') {
+                    addGrammarCorrection(
+                        data.original_text, 
+                        data.corrected_text, 
+                        data.explanation,
+                        data.has_errors
+                    );
+                } else if (data.response_type === 'vocabulary') {
+                    addVocabularyInfo(
+                        data.word,
+                        data.definition,
+                        data.example,
+                        data.synonyms
+                    );
+                } else if (data.response_type === 'alternatives') {
+                    addAlternativesInfo(
+                        data.word,
+                        data.context,
+                        data.alternatives
+                    );
+                } else {
+                    // Simple response
+                    addMessage(data.response || 'Sorry, I didn\'t understand that.', false);
                 }
             })
             .catch(error => {

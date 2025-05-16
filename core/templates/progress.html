@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Progress - English Learning Website{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Navigation</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
+                <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Profile</a>
+                <a href="{% url 'favorites' %}" class="list-group-item list-group-item-action">My Vocabulary</a>
+                <a href="{% url 'progress' %}" class="list-group-item list-group-item-action active">Learning Progress</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Learning Statistics</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Activities Completed</h5>
+                                <p class="display-4">{{ total_activities }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center">                            <div class="card-body">
+                                <h5 class="card-title">Average Score</h5>
+                                <p class="display-4">{{ avg_score|default:0 }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Vocabulary Words</h5>
+                                <p class="display-4">{{ saved_words.count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4>Progress Over Time</h4>
+                    <canvas id="progressChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Quiz History</h3>
+            </div>
+            <div class="card-body">
+                {% if quiz_attempts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Quiz</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in quiz_attempts %}
+                                    <tr>
+                                        <td>{{ attempt.quiz.title }}</td>                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                {% with score=attempt.score|default:0 %}
+                                                <div class="progress-bar {% if score >= 80 %}bg-success{% elif score >= 60 %}bg-info{% elif score >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: '{{ score }}%';" 
+                                                     aria-valuenow="{{ score }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    {{ score }}%
+                                                </div>
+                                                {% endwith %}
+                                            </div>
+                                        </td>
+                                        <td>{{ attempt.date_completed|date:"F j, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'quiz_results' attempt.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                            <a href="{% url 'take_quiz' attempt.quiz.id %}" class="btn btn-sm btn-outline-secondary">Retry</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        You haven't completed any quizzes yet. <a href="{% url 'quiz_list' %}">Take a quiz now</a> to see your results here!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Recent Activity</h3>
+            </div>
+            <div class="card-body">
+                {% if all_progress %}
+                    <div class="list-group">
+                        {% for progress in all_progress %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ progress.activity_type|title }}</h5>
+                                    <small>{{ progress.timestamp|date:"F j, Y, g:i a" }}</small>
+                                </div>                                <p class="mb-1">
+                                    Score: {{ progress.score|default:0 }}%
+                                    {% if progress.details %}
+                                        - {{ progress.details }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No activities recorded yet. Start using the learning features to see your progress here!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Activity data from backend
+        const activityData = JSON.parse('{{ activity_data|escapejs }}');
+        
+        // Prepare data for the chart
+        const datasets = [];
+        const colors = {
+            'grammar': 'rgba(54, 162, 235, 0.7)',
+            'vocabulary': 'rgba(75, 192, 192, 0.7)',
+            'quiz': 'rgba(153, 102, 255, 0.7)'
+        };
+        
+        // Create a dataset for each activity type
+        for (const [activityType, data] of Object.entries(activityData)) {
+            // Sort data by date
+            data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Create dataset
+            datasets.push({
+                label: activityType.charAt(0).toUpperCase() + activityType.slice(1),
+                data: data.map(item => ({
+                    x: item.date,
+                    y: item.score
+                })),
+                backgroundColor: colors[activityType] || 'rgba(201, 203, 207, 0.7)',
+                borderColor: colors[activityType] || 'rgba(201, 203, 207, 1)',
+                tension: 0.3
+            });
+        }
+        
+        // Create the chart
+        if (datasets.length > 0) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'MMM d'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Score (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // If no data, show a message instead of the chart
+            document.getElementById('progressChart').parentNode.innerHTML = 
+                '<div class="alert alert-info">No activity data available yet. Start learning to see your progress chart!</div>';
+        }
+    });
+</script>
+{% endblock %}

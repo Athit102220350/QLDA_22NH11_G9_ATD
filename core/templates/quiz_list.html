@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Quizzes - English Learning Website{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Navigation</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action">Dashboard</a>
+                <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Profile</a>
+                <a href="{% url 'favorites' %}" class="list-group-item list-group-item-action">My Vocabulary</a>
+                <a href="{% url 'progress' %}" class="list-group-item list-group-item-action">Learning Progress</a>
+                <a href="{% url 'quiz_list' %}" class="list-group-item list-group-item-action active">Quizzes</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <h2 class="mb-4">Available Quizzes</h2>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-header bg-primary text-white">Beginner</div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for quiz in quizzes %}
+                                {% if quiz.difficulty == 'beginner' %}
+                                    <a href="{% url 'take_quiz' quiz.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{{ quiz.title }}</h5>
+                                            {% if quiz.id in attempts_dict %}
+                                                <span class="badge bg-success">{{ attempts_dict.quiz.id.score }}%</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-1">{{ quiz.description|truncatechars:100 }}</p>
+                                        <small class="text-muted">{{ quiz.get_question_count }} questions</small>
+                                    </a>
+                                {% endif %}
+                            {% empty %}
+                                <div class="list-group-item">No beginner quizzes available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-header bg-primary text-white">Intermediate</div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for quiz in quizzes %}
+                                {% if quiz.difficulty == 'intermediate' %}
+                                    <a href="{% url 'take_quiz' quiz.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{{ quiz.title }}</h5>
+                                            {% if quiz.id in attempts_dict %}
+                                                <span class="badge bg-success">{{ attempts_dict.quiz.id.score }}%</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-1">{{ quiz.description|truncatechars:100 }}</p>
+                                        <small class="text-muted">{{ quiz.get_question_count }} questions</small>
+                                    </a>
+                                {% endif %}
+                            {% empty %}
+                                <div class="list-group-item">No intermediate quizzes available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-primary">
+                    <div class="card-header bg-primary text-white">Advanced</div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for quiz in quizzes %}
+                                {% if quiz.difficulty == 'advanced' %}
+                                    <a href="{% url 'take_quiz' quiz.id %}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{{ quiz.title }}</h5>
+                                            {% if quiz.id in attempts_dict %}
+                                                <span class="badge bg-success">{{ attempts_dict.quiz.id.score }}%</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-1">{{ quiz.description|truncatechars:100 }}</p>
+                                        <small class="text-muted">{{ quiz.get_question_count }} questions</small>
+                                    </a>
+                                {% endif %}
+                            {% empty %}
+                                <div class="list-group-item">No advanced quizzes available</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

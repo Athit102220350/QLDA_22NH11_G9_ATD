@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ quiz.title }} - English Learning Website{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">{{ quiz.title }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <p class="mb-1"><strong>Difficulty:</strong> {{ quiz.difficulty|title }}</p>
+                <p>{{ quiz.description }}</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for question in questions %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Question {{ forloop.counter }}</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if question.context %}
+                                <div class="alert alert-secondary mb-3">
+                                    {{ question.context|linebreaks }}
+                                </div>
+                            {% endif %}
+                            
+                            <p class="mb-3"><strong>{{ question.question_text }}</strong></p>
+                            
+                            <div class="list-group">
+                                {% for answer in question.get_answers %}
+                                    <div class="form-check mb-2 p-0">
+                                        <input 
+                                            type="radio" 
+                                            name="question_{{ question.id }}" 
+                                            id="answer_{{ answer.id }}" 
+                                            value="{{ answer.id }}"
+                                            class="form-check-input"
+                                            required
+                                        >
+                                        <label for="answer_{{ answer.id }}" class="form-check-label ms-2">
+                                            {{ answer.answer_text }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">Submit Quiz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

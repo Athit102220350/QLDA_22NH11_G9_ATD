@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - English Learning Website{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Navigation</h4>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'dashboard' %}" class="list-group-item list-group-item-action active">Dashboard</a>
+                <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Profile</a>
+                <a href="{% url 'favorites' %}" class="list-group-item list-group-item-action">My Vocabulary</a>
+                <a href="{% url 'progress' %}" class="list-group-item list-group-item-action">Learning Progress</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="alert alert-success">
+            <h4 class="alert-heading">Welcome, {{ user.first_name }}!</h4>
+            <p>Continue your English learning journey from where you left off.</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-book" style="font-size: 2rem; color: #0d6efd;"></i>
+                        <h5 class="card-title mt-2">Vocabulary Words</h5>
+                        <p class="card-text display-4">{{ word_count }}</p>
+                        <a href="{% url 'favorites' %}" class="btn btn-sm btn-primary">View My Words</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-mortarboard" style="font-size: 2rem; color: #0d6efd;"></i>
+                        <h5 class="card-title mt-2">Completed Lessons</h5>
+                        <p class="card-text display-4">{{ lesson_count }}</p>
+                        <a href="{% url 'progress' %}" class="btn btn-sm btn-primary">View Progress</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="bi bi-award" style="font-size: 2rem; color: #0d6efd;"></i>
+                        <h5 class="card-title mt-2">Current Level</h5>
+                        <p class="card-text display-6">{{ user.profile.level|title }}</p>
+                        <a href="{% url 'profile' %}" class="btn btn-sm btn-primary">Update Level</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Recent Activity</h4>
+            </div>
+            <div class="card-body">
+                {% if learning_progress %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Activity</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for progress in learning_progress %}
+                                    <tr>
+                                        <td>{{ progress.activity_type|title }}</td>
+                                        <td>{{ progress.score }}</td>
+                                        <td>{{ progress.timestamp|date:"F j, Y, g:i a" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No activity recorded yet. Start learning to see your progress!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Continue Learning</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a href="{% url 'chatbot' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                Practice with AI Chatbot
+                                <span class="badge bg-primary rounded-pill">
+                                    <i class="bi bi-chat-dots"></i>
+                                </span>
+                            </a>
+                            <a href="{% url 'vocabulary' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                Expand Your Vocabulary
+                                <span class="badge bg-primary rounded-pill">
+                                    <i class="bi bi-journal-text"></i>
+                                </span>
+                            </a>
+                            <a href="{% url 'quiz_list' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                Take a Quiz
+                                <span class="badge bg-primary rounded-pill">
+                                    <i class="bi bi-question-circle"></i>
+                                </span>
+                            </a>
+                            <a href="{% url 'word_alternatives' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                Improve Your Word Choices
+                                <span class="badge bg-primary rounded-pill">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Recent Vocabulary</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if saved_words %}
+                            <div class="list-group">
+                                {% for word in saved_words|slice:":5" %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1">{{ word.word }}</h5>
+                                            <small>{{ word.date_added|date:"M j" }}</small>
+                                        </div>
+                                        <p class="mb-1">{{ word.definition }}</p>
+                                        {% if word.example %}
+                                            <small class="text-muted">Example: {{ word.example }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{% url 'favorites' %}" class="btn btn-outline-primary">View All Words</a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                No vocabulary words saved yet. Start adding words to build your personal vocabulary list!
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+{% endblock %}

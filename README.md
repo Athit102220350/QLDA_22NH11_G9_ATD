@@ -1,36 +1,60 @@
 # English Learning Website
 
-A basic English learning website with an AI chatbot for grammar and vocabulary assistance.
+A comprehensive English learning platform with an AI-powered chatbot for grammar and vocabulary assistance, designed to help users improve their English language skills effectively.
 
 ## Features
 
 - Homepage with information about the learning platform
 - AI-powered chatbot for English grammar and vocabulary assistance
 - Responsive design using Bootstrap 5
+- User authentication and profile management
+- Progress tracking for learners
+- Interactive exercises and quizzes
 
 ## Setup and Installation
 
 1. Clone the repository
+   ```
+   git clone https://github.com/Athit102220350/QLDA_22NH11_G9_ATD.git -b english-learning-website
+   cd QLDA_22NH11_G9_ATD
+   ```
+
 2. Create a virtual environment:
    ```
    python -m venv venv
    ```
+
 3. Activate the virtual environment:
    - Windows: `.\venv\Scripts\activate`
    - Linux/Mac: `source venv/bin/activate`
+
 4. Install dependencies:
    ```
    pip install -r requirements.txt
    ```
-5. Run migrations:
+
+5. Create a `.env` file in the root directory with the following variables:
+   ```
+   SECRET_KEY=your_secret_key
+   DEBUG=True
+   ```
+
+6. Run migrations:
    ```
    python manage.py migrate
    ```
-6. Run the development server:
+
+7. Create a superuser (admin):
+   ```
+   python manage.py createsuperuser
+   ```
+
+8. Run the development server:
    ```
    python manage.py runserver
    ```
-7. Access the website at http://127.0.0.1:8000/
+
+9. Access the website at http://127.0.0.1:8000/
 
 ## Technologies Used
 
@@ -38,29 +62,26 @@ A basic English learning website with an AI chatbot for grammar and vocabulary a
 - Python 3.11
 - Bootstrap 5
 - JavaScript/HTML/CSS
+- SQLite (development) / PostgreSQL (production)
+- Requests 2.31.0
+- Gunicorn 21.2.0 (production server)
 
-## Project Structure
+## Deployment
 
-```
-english_learning_website/
-├── core/                      # Main app
-│   ├── static/                # Static files
-│   │   ├── css/               # CSS files
-│   │   └── js/                # JavaScript files
-│   ├── templates/             # HTML templates
-│   │   ├── base.html          # Base template with common elements
-│   │   ├── index.html         # Homepage
-│   │   └── chatbot.html       # Chatbot interface
-│   ├── admin.py               # Admin settings
-│   ├── apps.py                # App configuration
-│   ├── models.py              # Database models
-│   ├── tests.py               # Tests
-│   ├── urls.py                # URL routing for core app
-│   └── views.py               # View functions
-├── english_learning_website/  # Project settings
-│   ├── settings.py            # Project settings
-│   ├── urls.py                # Main URL routing
-│   ├── wsgi.py                # WSGI configuration
-│   └── asgi.py                # ASGI configuration
-└── manage.py                  # Django management script
-```
+This application can be deployed to platforms like Heroku, PythonAnywhere, or any server that supports Django applications.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+
+
+
