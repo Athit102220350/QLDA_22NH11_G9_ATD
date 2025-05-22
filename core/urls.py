@@ -1,10 +1,10 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
     path('chatbot/', views.chatbot, name='chatbot'),
-    path('vocabulary/', views.vocabulary, name='vocabulary'),
+    path('vocabulary/', include('core.vocabulary.urls')),
     path('word-alternatives/', views.word_alternatives, name='word_alternatives'),
     path('api/chatbot/', views.process_message, name='process_message'),
     

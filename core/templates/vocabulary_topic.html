@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ topic }} Vocabulary - English Learning Website{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/components/vocabulary.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/loading.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">        
+        <div class="col-md-8">
+            <h1 class="display-5 mb-3">{{ topic }}</h1>
+            <p class="lead">Explore vocabulary words starting with this letter:</p>
+        </div>
+        <div class="col-md-4 d-flex justify-content-end align-items-center">
+            <a href="{% url 'vocabulary_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Letters
+            </a>
+        </div>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="text-center mb-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading words and definitions...</p>
+    </div>
+    
+    <div class="row">
+        {% for word in words %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                        <h4 class="card-title mb-0">{{ word.word }}</h4>
+                        {% if user.is_authenticated %}
+                            {% if word.is_saved %}
+                                <button class="btn btn-success btn-sm remove-word-btn" 
+                                       data-word="{{ word.word }}"
+                                       data-definition="{{ word.definition }}"
+                                       data-example="{{ word.example|default:'' }}">
+                                    Đã lưu
+                                </button>
+                            {% else %}
+                                <button class="btn btn-primary btn-sm save-word-btn" 
+                                       data-word="{{ word.word }}"
+                                       data-definition="{{ word.definition }}"
+                                       data-example="{{ word.example|default:'' }}">
+                                    Lưu
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Definition:</strong> {{ word.definition }}</p>
+                        {% if word.example %}
+                            <p><strong>Example:</strong> <em>{{ word.example }}</em></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Word saved confirmation modal -->
+<div class="modal fade" id="wordSavedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Word Saved</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="savedMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'favorites' %}" class="btn btn-primary">View My Words</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show loading indicator on page navigation
+    document.querySelectorAll('a[href^="{% url "vocabulary_list" %}"]').forEach(link => {
+        link.addEventListener('click', function() {
+            document.getElementById('loading-indicator').style.display = 'block';
+        });
+    });
+    
+    // Get elements
+    const saveButtons = document.querySelectorAll('.save-word-btn');
+    const removeButtons = document.querySelectorAll('.remove-word-btn');
+    const savedModal = new bootstrap.Modal(document.getElementById('wordSavedModal'));
+    const savedMessage = document.getElementById('savedMessage');
+    
+    // Add click event to all save buttons
+    saveButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Disable button during save
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+            
+            // Get word data from data attributes
+            const word = this.dataset.word;
+            const definition = this.dataset.definition;
+            const example = this.dataset.example || '';
+            
+            // Send AJAX request to save the word
+            fetch('{% url "save_vocabulary_word" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    word: word,
+                    definition: definition,
+                    example: example
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success modal
+                    savedMessage.textContent = data.message || "The word has been added to your vocabulary list.";
+                    savedModal.show();
+                    
+                    // Update button
+                    this.innerHTML = 'Saved';
+                    this.classList.replace('btn-primary', 'btn-success');
+                } else {
+                    // Show error
+                    alert(data.error || 'An error occurred while saving the word.');
+                    this.disabled = false;
+                    this.innerHTML = 'Lưu';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the word.');
+                this.disabled = false;
+                this.innerHTML = 'Lưu';            });
+        });
+    });
+    
+    // Add click event to all remove buttons
+    removeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Are you sure you want to remove this word from your vocabulary list?')) {
+                // Disable button during delete
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Removing...';
+                
+                // Get word data
+                const word = this.dataset.word;
+                
+                // First we need to get the word ID
+                fetch('{% url "save_vocabulary_word" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        word: word,
+                        definition: "temp",  // We just need to find the word ID
+                        example: ""
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Now we have the word ID, delete it
+                        return fetch('{% url "delete_saved_word" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: JSON.stringify({ word_id: data.word_id })
+                        });
+                    } else {
+                        throw new Error(data.error || 'Failed to get word ID');
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update button to show "Lưu" again
+                        this.innerHTML = 'Lưu';
+                        this.classList.replace('btn-success', 'btn-primary');
+                        this.classList.replace('remove-word-btn', 'save-word-btn');
+                        
+                        // Show success message
+                        savedMessage.textContent = data.message || "The word has been removed from your vocabulary list.";
+                        savedModal.show();
+                    } else {
+                        alert(data.error || 'An error occurred while removing the word.');
+                        this.disabled = false;
+                        this.innerHTML = 'Đã lưu';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while removing the word.');
+                    this.disabled = false;
+                    this.innerHTML = 'Đã lưu';
+                });
+            }
+        });
+    });
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

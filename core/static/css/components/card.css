@@ -1,0 +1,20 @@
+/* Card styles for English Learning Website */
+
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Specific card styles for favorites */
+.card.border-success {
+    border-width: 2px;
+}
+
+/* Card header with flex for vocabulary words */
+.card-header.d-flex {
+    background-color: rgba(0, 0, 0, 0.03);
+}

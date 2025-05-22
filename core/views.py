@@ -307,10 +307,11 @@ def quiz_results(request, attempt_id):
 @login_required
 def favorites(request):
     """View for displaying user's saved vocabulary words."""
-    saved_words = SavedWord.objects.filter(user=request.user)
+    saved_words = SavedWord.objects.filter(user=request.user).order_by('-date_added')
     
     context = {
-        'saved_words': saved_words
+        'favorites': saved_words,
+        'total_count': saved_words.count()
     }
     
     return render(request, 'favorites.html', context)

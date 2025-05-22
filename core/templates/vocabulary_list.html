@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Vocabulary Topics - English Learning Website{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/components/vocabulary.css' %}">
+<link rel="stylesheet" href="{% static 'css/components/loading.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5 mb-3">English Vocabulary</h1>
+            <p class="lead">Browse vocabulary words by first letter:</p>
+        </div>
+    </div>
+      <!-- Loading indicator -->
+    <div id="loading-indicator" class="text-center mb-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading vocabulary words...</p>
+    </div>
+
+    <div class="row">
+        {% for topic in topics %}
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h2 class="display-4">{{ topic.topic }}</h2>
+                        <p class="text-muted">{{ topic.count }} words</p>
+                        <a href="{% url 'vocabulary_topic' topic.topic %}" class="btn btn-primary vocabulary-link">
+                            Browse Words
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- JavaScript to show loading indicator -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('.vocabulary-link');
+            links.forEach(link => {
+                link.addEventListener('click', function() {
+                    document.getElementById('loading-indicator').style.display = 'block';
+                });
+            });
+        });
+    </script>
+</div>
+{% endblock %}

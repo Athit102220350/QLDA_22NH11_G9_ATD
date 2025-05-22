@@ -1,0 +1,34 @@
+/* Favorites page specific styles */
+
+/* Filter panel */
+.card .list-group-item.active {
+    background-color: #4a6bdf;
+    border-color: #4a6bdf;
+}
+
+/* Word filtering and sorting */
+#search, #sort {
+    border-radius: 4px;
+}
+
+/* Word cards in favorites */
+.word-item .card {
+    border-radius: 8px;
+}
+
+/* Mastered badge */
+.badge.bg-success {
+    font-weight: normal;
+    padding: 5px 10px;
+}
+
+/* Empty favorites message */
+.alert-info ol {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Date added text */
+.text-muted small {
+    font-size: 0.8rem;
+}

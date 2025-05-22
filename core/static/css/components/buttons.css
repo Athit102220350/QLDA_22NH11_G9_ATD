@@ -1,0 +1,22 @@
+/* Button styles for English Learning Website */
+
+.btn-primary {
+    background-color: #4a6bdf;
+    border-color: #4a6bdf;
+}
+
+.btn-primary:hover {
+    background-color: #3452c3;
+    border-color: #3452c3;
+}
+
+/* Save/Remove word buttons */
+.save-word-btn, .remove-word-btn {
+    transition: all 0.3s ease;
+}
+
+/* Toggle mastered buttons */
+.toggle-mastered {
+    width: 100%;
+    text-align: center;
+}

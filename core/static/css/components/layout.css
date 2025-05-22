@@ -1,0 +1,16 @@
+/* Layout styles for English Learning Website */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+/* Footer positioning */
+footer {
+    margin-top: auto;
+}

@@ -1,8 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}My Vocabulary - English Learning Website{% endblock %}
+{% block title %}My Favorite Words - English Learning Website{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/components/favorites.css' %}">
+{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="row">
     <div class="col-md-3">
         <div class="card mb-4">
@@ -62,10 +69,9 @@
     </div>
     
     <div class="col-md-9">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="card shadow">            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h3 class="mb-0">My Vocabulary List</h3>
-                <span class="badge bg-white text-primary">{{ saved_words.count }} words</span>
+                <span class="badge bg-white text-primary">{{ total_count }} words</span>
             </div>
             <div class="card-body">
                 {% if messages %}
@@ -76,10 +82,10 @@
                     {% endfor %}
                 {% endif %}
                 
-                {% if saved_words %}
+                {% if favorites %}
                     <div id="vocabulary-list">
                         <div class="row">
-                            {% for word in saved_words %}
+                            {% for word in favorites %}
                                 <div class="col-md-6 mb-3 word-item" 
                                      data-word="{{ word.word }}" 
                                      data-mastered="{{ word.mastered|lower }}"
@@ -116,17 +122,15 @@
                                 </div>
                             {% endfor %}
                         </div>
-                    </div>
-                {% else %}
+                    </div>                {% else %}
                     <div class="alert alert-info">
                         <p>You haven't saved any vocabulary words yet. To add words to your list:</p>
                         <ol>
                             <li>Use the Chatbot to lookup vocabulary words</li>
                             <li>Visit the Vocabulary page to explore words</li>
-                            <li>Click "Save to My Vocabulary" when you find words you want to learn</li>
-                        </ol>
-                        <div class="text-center mt-3">
-                            <a href="{% url 'vocabulary' %}" class="btn btn-primary">
+                            <li>Click "Lưu" when you find words you want to learn</li>
+                        </ol>                        <div class="text-center mt-3">
+                            <a href="{% url 'vocabulary_list' %}" class="btn btn-primary">
                                 <i class="bi bi-journal-text"></i> Go to Vocabulary Page
                             </a>
                         </div>
@@ -136,10 +140,6 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 {% endblock %}
 
 {% block extra_js %}

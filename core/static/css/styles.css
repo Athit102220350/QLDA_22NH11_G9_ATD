@@ -1,37 +1,19 @@
 /* Custom styles for English Learning Website */
 
-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+/* Import component CSS files */
+@import url('components/layout.css');
+@import url('components/card.css');
+@import url('components/buttons.css');
+@import url('components/vocabulary.css');
+@import url('components/favorites.css');
+@import url('components/loading.css');
+
+/* Global custom styles */
+:root {
+    --primary-color: #4a6bdf;
+    --primary-hover: #3452c3;
+    --light-bg: #f8f9fa;
+    --card-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
-.container {
-    flex: 1;
-}
-
-/* Custom card styling */
-.card {
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-}
-
-/* Custom button styling */
-.btn-primary {
-    background-color: #4a6bdf;
-    border-color: #4a6bdf;
-}
-
-.btn-primary:hover {
-    background-color: #3452c3;
-    border-color: #3452c3;
-}
-
-/* Footer positioning */
-footer {
-    margin-top: auto;
-}
+/* Additional custom styles that don't fit in component files can be added here */

@@ -18,7 +18,7 @@ class UserProfile(models.Model):
 
 class LearningProgress(models.Model):
     """Track user's learning progress"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='progress')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='progress')  
     activity_type = models.CharField(max_length=50, 
                                     choices=[('grammar', 'Grammar'), 
                                              ('vocabulary', 'Vocabulary'), 
@@ -70,9 +70,9 @@ class Quiz(models.Model):
     """Model for quizzes"""
     title = models.CharField(max_length=200)
     description = models.TextField()
-    difficulty = models.CharField(max_length=20, 
-                                 choices=[('beginner', 'Beginner'), 
-                                          ('intermediate', 'Intermediate'), 
+    difficulty = models.CharField(max_length=20,
+                                 choices=[('beginner', 'Beginner'),
+                                          ('intermediate', 'Intermediate'),
                                           ('advanced', 'Advanced')])
     created_date = models.DateTimeField(auto_now_add=True)
     
@@ -117,7 +117,7 @@ class QuizAnswer(models.Model):
 class QuizAttempt(models.Model):
     """Model to track quiz attempts"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts')
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)    
     score = models.IntegerField(default=0)
     completed = models.BooleanField(default=False)
     date_started = models.DateTimeField(auto_now_add=True)
@@ -128,3 +128,43 @@ class QuizAttempt(models.Model):
     
     def __str__(self):
         return f"{self.user.username}'s attempt on {self.quiz.title}"
+
+
+class Vocabulary(models.Model):
+    """Model for vocabulary words"""
+    word = models.CharField(max_length=100)
+    definition = models.TextField()
+    example = models.TextField(blank=True, null=True)
+    pronunciation = models.CharField(max_length=100, blank=True, null=True)
+    topic = models.CharField(max_length=100)
+    difficulty = models.CharField(max_length=20,
+                                 choices=[('beginner', 'Beginner'),
+                                          ('intermediate', 'Intermediate'),
+                                          ('advanced', 'Advanced')],
+                                 default='beginner')
+    date_added = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = "Vocabularies"
+        ordering = ['word']
+    
+    def __str__(self):
+        return f"{self.word} ({self.topic})"
+
+
+class FavoriteVocabulary(models.Model):
+    """Model for users' favorite vocabulary words"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_words')
+    word = models.CharField(max_length=100)
+    definition = models.TextField()
+    example = models.TextField(blank=True, null=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+    mastered = models.BooleanField(default=False)
+    
+    class Meta:
+        verbose_name_plural = "Favorite Vocabularies"
+        unique_together = ('user', 'word')
+        ordering = ['-date_added']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.word}"

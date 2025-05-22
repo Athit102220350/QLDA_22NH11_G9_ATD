@@ -1,0 +1,30 @@
+/* Vocabulary page specific styles */
+
+/* Topic cards */
+.vocabulary-link {
+    width: 100%;
+}
+
+/* Word card styling */
+.card-header h4.card-title {
+    margin-bottom: 0;
+}
+
+/* Word definition and example spacing */
+.card-body p {
+    margin-bottom: 0.75rem;
+}
+
+.card-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* Modal styling for word saved confirmation */
+#wordSavedModal .modal-title {
+    color: #4a6bdf;
+}
+
+/* Word cards equal height */
+.col-md-6.mb-4 .card {
+    height: 100%;
+}
