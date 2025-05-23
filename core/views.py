@@ -4,7 +4,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Avg
+from django.db.models import Avg, Max, Count, F, ExpressionWrapper, fields, Q
+from datetime import timedelta, datetime
 import json
 import requests
 from django.views.decorators.csrf import csrf_exempt
@@ -198,7 +199,7 @@ def process_message(request):
 @login_required
 def quiz_list(request):
     """View for displaying available quizzes."""
-    quizzes = Quiz.objects.all()
+    quizzes = Quiz.objects.filter(is_active=True)
     
     # Get the user's quiz attempts
     user_attempts = QuizAttempt.objects.filter(user=request.user)
@@ -224,6 +225,11 @@ def quiz_list(request):
 def take_quiz(request, quiz_id):
     """View for taking a quiz."""
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    
+    # Format time limit for display (MM:SS)
+    minutes = quiz.time_limit // 60
+    seconds = quiz.time_limit % 60
+    quiz.time_limit_formatted = f"{minutes:02d}:{seconds:02d}"
     
     # Check if there's an unfinished attempt
     existing_attempt = QuizAttempt.objects.filter(
@@ -277,13 +283,19 @@ def take_quiz(request, quiz_id):
             defaults={'score': percentage_score}
         )
         
-        messages.success(request, f'Quiz completed with score: {percentage_score}%')
+        # Check if the user passed the quiz
+        passed = percentage_score >= quiz.pass_mark
+        message_type = 'success' if passed else 'warning'
+        message = f'Quiz completed with score: {percentage_score}%. ' + ('Congratulations, you passed!' if passed else 'Try again to improve your score.')
+        
+        messages.add_message(request, getattr(messages, message_type.upper()), message)
         return redirect('quiz_results', attempt_id=existing_attempt.id)
     
     context = {
         'quiz': quiz,
         'questions': quiz.get_questions(),
-        'attempt': existing_attempt
+        'attempt': existing_attempt,
+        'time_limit_seconds': quiz.time_limit
     }
     
     return render(request, 'take_quiz.html', context)
@@ -296,6 +308,14 @@ def quiz_results(request, attempt_id):
     if not attempt.completed:
         messages.warning(request, 'This quiz attempt has not been completed yet.')
         return redirect('take_quiz', quiz_id=attempt.quiz.id)
+    
+    # Update quiz progress for this category
+    from .models import QuizProgress
+    progress, created = QuizProgress.objects.get_or_create(
+        user=request.user,
+        category=attempt.quiz.category
+    )
+    progress.update_progress()
     
     context = {
         'attempt': attempt,
@@ -451,3 +471,144 @@ def delete_saved_word(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Only POST requests are allowed'})
+
+@login_required
+def quiz_leaderboard(request):
+    """View for displaying quiz leaderboard."""
+    # Get all available quizzes for filter dropdown
+    quizzes = Quiz.objects.filter(is_active=True)
+    
+    # Get filter parameters
+    selected_quiz = request.GET.get('quiz_id', 'all')
+    time_filter = request.GET.get('time_filter', 'all-time')
+    
+    # Base query for completed quiz attempts
+    query = QuizAttempt.objects.filter(completed=True)
+    
+    # Apply quiz filter if specific quiz selected
+    if selected_quiz != 'all' and selected_quiz.isdigit():
+        query = query.filter(quiz_id=selected_quiz)
+    
+    # Apply time filter
+    now = timezone.now()
+    if time_filter == 'monthly':
+        # Filter for current month
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(date_completed__gte=month_start)
+    elif time_filter == 'weekly':
+        # Filter for current week (last 7 days)
+        week_start = now - timedelta(days=7)
+        query = query.filter(date_completed__gte=week_start)
+    
+    # Calculate time taken for each attempt
+    leaderboard = []
+    for attempt in query.order_by('-score', 'date_completed')[:20]:  # Top 20 scores
+        if attempt.date_completed and attempt.date_started:
+            time_taken = attempt.date_completed - attempt.date_started
+            minutes = time_taken.seconds // 60
+            seconds = time_taken.seconds % 60
+            time_taken_formatted = f"{minutes}m {seconds}s"
+        else:
+            time_taken_formatted = "N/A"
+            
+        leaderboard.append({
+            'user': attempt.user,
+            'quiz': attempt.quiz,
+            'score': attempt.score,
+            'date_completed': attempt.date_completed,
+            'time_taken': time_taken_formatted
+        })
+    
+    # Get current user's statistics
+    user_stats = None
+    if request.user.is_authenticated:
+        user_attempts = QuizAttempt.objects.filter(user=request.user, completed=True)
+        
+        # Only calculate stats if user has completed quizzes
+        if user_attempts.exists():
+            total_attempts = user_attempts.count()
+            avg_score = user_attempts.aggregate(Avg('score'))['score__avg']
+            highest_score = user_attempts.aggregate(Max('score'))['score__max']
+            
+            # Calculate user's rank based on highest score
+            higher_scores = QuizAttempt.objects.filter(
+                score__gt=highest_score
+            ).values('user').annotate(
+                max_score=Max('score')
+            ).count()
+            
+            user_stats = {
+                'total_attempts': total_attempts,
+                'avg_score': int(avg_score) if avg_score else 0,
+                'highest_score': highest_score,
+                'rank': higher_scores + 1  # Add 1 because ranks start at 1
+            }
+    
+    context = {
+        'quizzes': quizzes,
+        'selected_quiz': selected_quiz,
+        'time_filter': time_filter,
+        'leaderboard': leaderboard,
+        'user_stats': user_stats
+    }
+    
+    return render(request, 'quiz_leaderboard.html', context)
+
+@login_required
+def quiz_progress(request):
+    """View for displaying user's quiz progress."""
+    from .models import QuizProgress
+    import json
+    
+    # Get overall stats
+    user_attempts = QuizAttempt.objects.filter(user=request.user)
+    total_quizzes = user_attempts.count()
+    completed_quizzes = user_attempts.filter(completed=True).count()
+    
+    # Calculate average score across all completed quizzes
+    avg_score = user_attempts.filter(completed=True).aggregate(Avg('score'))['score__avg']
+    avg_score = int(avg_score) if avg_score else 0
+    
+    overall_stats = {
+        'total_quizzes': total_quizzes,
+        'completed_quizzes': completed_quizzes,
+        'avg_score': avg_score
+    }
+    
+    # Get category progress
+    categories = ['grammar', 'vocabulary', 'reading', 'listening', 'general']
+    category_names = ['Grammar', 'Vocabulary', 'Reading', 'Listening', 'General']
+    category_scores = []
+    
+    for category in categories:
+        # Get average score for this category
+        category_score = user_attempts.filter(
+            completed=True,
+            quiz__category=category
+        ).aggregate(Avg('score'))['score__avg']
+        
+        category_scores.append(int(category_score) if category_score else 0)
+    
+    # Get recent attempts with completed date for timeline
+    recent_attempts = user_attempts.filter(
+        completed=True
+    ).order_by('-date_completed')[:10]
+    
+    # Prepare data for progress over time chart
+    time_scores = []
+    time_labels = []
+    
+    for attempt in recent_attempts.order_by('date_completed'):
+        time_scores.append(attempt.score)
+        time_labels.append(attempt.date_completed.strftime('%b %d'))
+    
+    context = {
+        'overall_stats': overall_stats,
+        'categories': json.dumps(category_names),
+        'category_scores': json.dumps(category_scores),
+        'recent_attempts': recent_attempts,
+        'time_scores': json.dumps(time_scores),
+        'time_labels': json.dumps(time_labels)
+    }
+    
+    return render(request, 'quiz_progress.html', context)

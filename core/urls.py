@@ -13,12 +13,12 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('profile/', views.profile, name='profile'),
-    
-    # Quiz URLs
+    path('profile/', views.profile, name='profile'),    # Quiz URLs
     path('quizzes/', views.quiz_list, name='quiz_list'),
     path('quizzes/<int:quiz_id>/', views.take_quiz, name='take_quiz'),
     path('quiz-results/<int:attempt_id>/', views.quiz_results, name='quiz_results'),
+    path('quiz-leaderboard/', views.quiz_leaderboard, name='quiz_leaderboard'),
+    path('quiz-progress/', views.quiz_progress, name='quiz_progress'),
     
     # Vocabulary and progress URLs
     path('favorites/', views.favorites, name='favorites'),

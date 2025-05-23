@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Avg
 
 # Create your models here.
 class UserProfile(models.Model):
@@ -75,6 +76,15 @@ class Quiz(models.Model):
                                           ('intermediate', 'Intermediate'),
                                           ('advanced', 'Advanced')])
     created_date = models.DateTimeField(auto_now_add=True)
+    time_limit = models.IntegerField(default=600, help_text="Time limit in seconds (default: 10 minutes)")
+    pass_mark = models.IntegerField(default=60, help_text="Percentage score needed to pass")
+    category = models.CharField(max_length=50, default='general',
+                              choices=[('grammar', 'Grammar'),
+                                      ('vocabulary', 'Vocabulary'),
+                                      ('reading', 'Reading Comprehension'),
+                                      ('listening', 'Listening Comprehension'),
+                                      ('general', 'General English')])
+    is_active = models.BooleanField(default=True)
     
     class Meta:
         verbose_name_plural = "Quizzes"
@@ -88,6 +98,10 @@ class Quiz(models.Model):
     
     def get_question_count(self):
         return self.questions.count()
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('take_quiz', args=[str(self.id)])
 
 
 class QuizQuestion(models.Model):
@@ -96,6 +110,8 @@ class QuizQuestion(models.Model):
     question_text = models.TextField()
     # Optional context for reading-based questions
     context = models.TextField(blank=True, null=True)
+    # Audio file for listening questions
+    audio_file = models.FileField(upload_to='quiz_audio/', blank=True, null=True)
     
     def __str__(self):
         return self.question_text[:50]
@@ -168,3 +184,48 @@ class FavoriteVocabulary(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.word}"
+
+
+class QuizProgress(models.Model):
+    """Model to track user's progress across all quizzes"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_progress')
+    category = models.CharField(max_length=50, choices=[
+        ('grammar', 'Grammar'),
+        ('vocabulary', 'Vocabulary'),
+        ('reading', 'Reading Comprehension'),
+        ('listening', 'Listening Comprehension'),
+        ('general', 'General English')
+    ])
+    total_attempted = models.IntegerField(default=0)
+    total_completed = models.IntegerField(default=0)
+    average_score = models.FloatField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('user', 'category')
+    
+    def __str__(self):
+        return f"{self.user.username}'s {self.category} progress"
+        
+    def update_progress(self):
+        """Update progress stats based on user's quiz attempts"""
+        # Get all completed attempts in this category
+        category_attempts = QuizAttempt.objects.filter(
+            user=self.user,
+            quiz__category=self.category,
+            completed=True
+        )
+        
+        # Update statistics
+        self.total_completed = category_attempts.count()
+        self.total_attempted = QuizAttempt.objects.filter(
+            user=self.user,
+            quiz__category=self.category
+        ).count()
+        
+        if self.total_completed > 0:
+            self.average_score = category_attempts.aggregate(Avg('score'))['score__avg']
+        else:
+            self.average_score = 0
+            
+        self.save()

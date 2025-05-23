@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz Leaderboard - English Learning Website{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{% static 'css/components/quiz.css' %}">
+<style>
+    .leaderboard-table th,
+    .leaderboard-table td {
+        vertical-align: middle;
+    }
+    
+    .user-rank {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: bold;
+        margin: 0 auto;
+    }
+    
+    .rank-1 {
+        background-color: gold;
+        color: #212529;
+    }
+    
+    .rank-2 {
+        background-color: silver;
+        color: #212529;
+    }
+    
+    .rank-3 {
+        background-color: #cd7f32; /* bronze */
+        color: white;
+    }
+    
+    .highlight-user {
+        background-color: rgba(74, 107, 223, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Quiz Leaderboard</h2>
+            <a href="{% url 'quiz_list' %}" class="btn btn-light">
+                <i class="bi bi-grid"></i> Quiz List
+            </a>
+        </div>
+        <div class="card-body">
+            <!-- Quiz Filter -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <form method="get" class="d-flex">
+                        <select name="quiz_id" class="form-select me-2" id="quiz-selector">
+                            <option value="all" {% if selected_quiz == 'all' %}selected{% endif %}>All Quizzes</option>
+                            {% for quiz in quizzes %}
+                                <option value="{{ quiz.id }}" {% if selected_quiz == quiz.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ quiz.title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <div class="btn-group float-md-end" role="group">
+                        <button type="button" class="btn btn-outline-primary active" data-time-filter="all-time">All Time</button>
+                        <button type="button" class="btn btn-outline-primary" data-time-filter="monthly">Monthly</button>
+                        <button type="button" class="btn btn-outline-primary" data-time-filter="weekly">Weekly</button>
+                    </div>
+                </div>
+            </div>
+            
+            {% if leaderboard %}
+                <div class="table-responsive">
+                    <table class="table table-hover leaderboard-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Rank</th>
+                                <th>User</th>
+                                <th>Quiz</th>
+                                <th>Score</th>
+                                <th>Date Completed</th>
+                                <th>Time Taken</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in leaderboard %}
+                                <tr {% if entry.user == request.user %}class="highlight-user"{% endif %}>
+                                    <td>
+                                        {% if forloop.counter <= 3 %}
+                                            <div class="user-rank rank-{{ forloop.counter }}">{{ forloop.counter }}</div>
+                                        {% else %}
+                                            <div class="text-center">{{ forloop.counter }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                {{ entry.user.username|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ entry.user.username }}</strong>
+                                                {% if entry.user == request.user %}
+                                                    <span class="badge bg-primary ms-1">You</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ entry.quiz.title }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar {% if entry.score >= 80 %}bg-success{% elif entry.score >= 60 %}bg-info{% elif entry.score >= 40 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                     role="progressbar" 
+                                                     style="width: '{{ entry.score }}'">
+                                                </div>
+                                            </div>
+                                            <span><strong>{{ entry.score }}%</strong></span>
+                                        </div>
+                                    </td>
+                                    <td>{{ entry.date_completed|date:"M d, Y" }}</td>
+                                    <td>{{ entry.time_taken }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No quiz attempts found for the selected filter.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Your Statistics Card -->
+    {% if user_stats %}
+    <div class="card shadow">
+        <div class="card-header bg-info text-white">
+            <h3 class="mb-0">Your Quiz Statistics</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h1 class="display-4">{{ user_stats.total_attempts }}</h1>
+                            <p class="text-muted">Total Attempts</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h1 class="display-4">{{ user_stats.avg_score }}%</h1>
+                            <p class="text-muted">Average Score</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h1 class="display-4">{{ user_stats.highest_score }}%</h1>
+                            <p class="text-muted">Highest Score</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h1 class="display-4">{{ user_stats.rank }}</h1>
+                            <p class="text-muted">Your Rank</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Quick filter functionality
+        const quizSelector = document.getElementById('quiz-selector');
+        quizSelector.addEventListener('change', function() {
+            this.form.submit();
+        });
+        
+        // Time filter buttons
+        const timeFilterButtons = document.querySelectorAll('[data-time-filter]');
+        timeFilterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                timeFilterButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Add time filter to current URL and redirect
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('time_filter', this.dataset.timeFilter);
+                window.location.search = urlParams.toString();
+            });
+        });
+    });
+</script>
+{% endblock %}
