@@ -6,6 +6,129 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/components/vocabulary.css' %}">
 <link rel="stylesheet" href="{% static 'css/components/loading.css' %}">
+<style>
+    /* Flashcard styles */
+    .flashcard-container {
+        perspective: 1000px;
+        margin-bottom: 30px;
+        height: 320px;
+    }
+    
+    .flashcard {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.8s;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+        border-radius: 8px;
+    }
+    
+    .flashcard.flipped {
+        transform: rotateY(180deg);
+    }
+    
+    .flashcard-front, .flashcard-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .flashcard-front {
+        background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .flashcard-back {
+        background: white;
+        transform: rotateY(180deg);
+        overflow-y: auto;
+    }
+    
+    .word-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    
+    .flashcard-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .flashcard-instructions {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-align: center;
+        position: absolute;
+        bottom: 15px;
+    }
+    
+    .flashcard-nav {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(255,255,255,0.9);
+        padding: 10px 15px;
+        border-radius: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .pronunciation {
+        font-family: Arial, sans-serif;
+        color: #6610f2;
+        margin-bottom: 10px;
+    }
+
+    /* Difficulty level colors */
+    .level-A1 { background-color: #d4edda; color: #155724; }
+    .level-A2 { background-color: #d1ecf1; color: #0c5460; }
+    .level-B1 { background-color: #fff3cd; color: #856404; }
+    .level-B2 { background-color: #f8d7da; color: #721c24; }
+    .level-C1 { background-color: #cce5ff; color: #004085; }
+    .level-C2 { background-color: #e2e3e5; color: #383d41; }
+    
+    /* View mode toggle */
+    .view-toggle-btn {
+        margin-bottom: 20px;
+    }
+    
+    /* List view styles */
+    .card-header-word {
+        font-size: 1.4rem;
+        font-weight: 500;
+    }
+    
+    .audio-player {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    /* Progress bar */
+    .progress-container {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        width: 60%;
+        max-width: 500px;
+        background: rgba(255,255,255,0.9);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -13,12 +136,42 @@
     <div class="row mb-4">        
         <div class="col-md-8">
             <h1 class="display-5 mb-3">{{ topic }}</h1>
-            <p class="lead">Explore vocabulary words starting with this letter:</p>
+            <p class="lead">
+                Explore vocabulary words for this topic. 
+                <span class="text-muted">Click cards to flip them.</span>
+            </p>
         </div>
-        <div class="col-md-4 d-flex justify-content-end align-items-center">
-            <a href="{% url 'vocabulary_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Letters
+        <div class="col-md-4 d-flex flex-column align-items-end">
+            <a href="{% url 'vocabulary_list' %}" class="btn btn-outline-secondary mb-2">
+                <i class="bi bi-arrow-left"></i> Back to Topics
             </a>
+            
+            <!-- Difficulty level filter -->
+            <div class="dropdown w-100 mt-2">
+                <form method="get" id="level-filter-form" class="w-100">
+                    <select name="level" class="form-select" id="level-filter" onchange="this.form.submit()">
+                        {% for level in difficulty_levels %}
+                            <option value="{{ level.code }}" {% if selected_level == level.code %}selected{% endif %}>
+                                {{ level.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- View toggle buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group w-100" role="group" aria-label="View mode">
+                <button type="button" class="btn btn-outline-primary active" id="flashcard-view-btn">
+                    <i class="bi bi-card-heading"></i> Flashcard View
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="list-view-btn">
+                    <i class="bi bi-list-ul"></i> List View
+                </button>
+            </div>
         </div>
     </div>
     
@@ -30,38 +183,113 @@
         <p class="mt-2">Loading words and definitions...</p>
     </div>
     
-    <div class="row">
-        {% for word in words %}
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm">                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
-                        <h4 class="card-title mb-0">{{ word.word }}</h4>
-                        {% if user.is_authenticated %}
-                            {% if word.is_saved %}
-                                <button class="btn btn-success btn-sm remove-word-btn" 
-                                       data-word="{{ word.word }}"
-                                       data-definition="{{ word.definition }}"
-                                       data-example="{{ word.example|default:'' }}">
-                                    Đã lưu
-                                </button>
-                            {% else %}
-                                <button class="btn btn-primary btn-sm save-word-btn" 
-                                       data-word="{{ word.word }}"
-                                       data-definition="{{ word.definition }}"
-                                       data-example="{{ word.example|default:'' }}">
-                                    Lưu
-                                </button>
+    <!-- Flashcard view -->
+    <div id="flashcard-view">
+        <!-- Progress bar for flashcards -->
+        <div class="progress-container" id="flashcard-progress-container">
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">Progress</small>
+                <small class="text-muted" id="progress-counter">1/{{ words|length }}</small>
+            </div>
+            <div class="progress">
+                <div class="progress-bar" id="flashcard-progress" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- Flashcard container (only one displayed at a time) -->
+        <div class="flashcard-container" id="active-flashcard"></div>
+        
+        <!-- Flashcard navigation -->
+        <div class="flashcard-nav">
+            <button class="btn btn-sm btn-outline-secondary me-2" id="prev-card-btn" disabled>
+                <i class="bi bi-arrow-left-circle"></i> Previous
+            </button>
+            <button class="btn btn-sm btn-outline-primary" id="flip-card-btn">
+                <i class="bi bi-arrow-repeat"></i> Flip Card
+            </button>
+            <button class="btn btn-sm btn-outline-secondary ms-2" id="next-card-btn">
+                Next <i class="bi bi-arrow-right-circle"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- List view (hidden initially) -->
+    <div id="list-view" style="display: none;">
+        <div class="row">
+            {% for word in words %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                            <div>
+                                <h4 class="card-header-word mb-0">{{ word.word }}</h4>
+                                <div class="small">
+                                    {% if word.part_of_speech %}
+                                        <span class="badge bg-secondary me-1">{{ word.part_of_speech }}</span>
+                                    {% endif %}
+                                    
+                                    {% if word.level %}
+                                        <span class="badge level-{{ word.level }}">{{ word.level }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if user.is_authenticated %}
+                                {% if word.is_saved %}
+                                    <button class="btn btn-success btn-sm remove-word-btn" 
+                                           data-word="{{ word.word }}"
+                                           data-definition="{{ word.definition }}"
+                                           data-example="{{ word.example|default:'' }}"
+                                           data-topic="{{ topic|lower }}"
+                                           data-level="{{ word.level|default:'B1' }}"
+                                           data-part-of-speech="{{ word.part_of_speech|default:'' }}"
+                                           data-synonyms="{{ word.synonyms|default:'' }}"
+                                           data-pronunciation="{{ word.pronunciation|default:'' }}"
+                                           data-audio="{{ word.audio|default:'' }}">
+                                        <i class="bi bi-bookmark-check-fill"></i> Saved
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-primary btn-sm save-word-btn" 
+                                           data-word="{{ word.word }}"
+                                           data-definition="{{ word.definition }}"
+                                           data-example="{{ word.example|default:'' }}"
+                                           data-topic="{{ topic|lower }}"
+                                           data-level="{{ word.level|default:'B1' }}"
+                                           data-part-of-speech="{{ word.part_of_speech|default:'' }}"
+                                           data-synonyms="{{ word.synonyms|default:'' }}"
+                                           data-pronunciation="{{ word.pronunciation|default:'' }}"
+                                           data-audio="{{ word.audio|default:'' }}">
+                                        <i class="bi bi-bookmark-plus"></i> Save
+                                    </button>
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Definition:</strong> {{ word.definition }}</p>
-                        {% if word.example %}
-                            <p><strong>Example:</strong> <em>{{ word.example }}</em></p>
-                        {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if word.pronunciation %}
+                                <div class="pronunciation">{{ word.pronunciation }}</div>
+                            {% endif %}
+                            
+                            {% if word.audio %}
+                                <div class="audio-player">
+                                    <audio controls src="{{ word.audio }}" class="audio-element w-100" style="height: 40px;">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            {% endif %}
+                            
+                            <p><strong>Definition:</strong> {{ word.definition }}</p>
+                            
+                            {% if word.example %}
+                                <p><strong>Example:</strong> <em>{{ word.example }}</em></p>
+                            {% endif %}
+                            
+                            {% if word.synonyms %}
+                                <p><strong>Synonyms:</strong> {{ word.synonyms }}</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -111,6 +339,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const word = this.dataset.word;
             const definition = this.dataset.definition;
             const example = this.dataset.example || '';
+            const topic = this.dataset.topic || '';
+            const level = this.dataset.level || 'B1';
+            const partOfSpeech = this.dataset.partOfSpeech || '';
+            const synonyms = this.dataset.synonyms || '';
+            const pronunciation = this.dataset.pronunciation || '';
+            const audio = this.dataset.audio || '';
             
             // Send AJAX request to save the word
             fetch('{% url "save_vocabulary_word" %}', {
@@ -122,7 +356,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     word: word,
                     definition: definition,
-                    example: example
+                    example: example,
+                    topic: topic,
+                    level: level,
+                    part_of_speech: partOfSpeech,
+                    synonyms: synonyms,
+                    pronunciation: pronunciation,
+                    audio: audio
                 })
             })
             .then(response => response.json())
@@ -133,20 +373,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     savedModal.show();
                     
                     // Update button
-                    this.innerHTML = 'Saved';
+                    this.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
                     this.classList.replace('btn-primary', 'btn-success');
+                    this.classList.replace('save-word-btn', 'remove-word-btn');
                 } else {
                     // Show error
                     alert(data.error || 'An error occurred while saving the word.');
                     this.disabled = false;
-                    this.innerHTML = 'Lưu';
+                    this.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('An error occurred while saving the word.');
                 this.disabled = false;
-                this.innerHTML = 'Lưu';            });
+                this.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
+            });
         });
     });
     
@@ -161,40 +403,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Get word data
                 const word = this.dataset.word;
                 
-                // First we need to get the word ID
-                fetch('{% url "save_vocabulary_word" %}', {
+                // Send request to remove the word
+                fetch('{% url "delete_saved_word" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': getCookie('csrftoken')
                     },
-                    body: JSON.stringify({
-                        word: word,
-                        definition: "temp",  // We just need to find the word ID
-                        example: ""
-                    })
+                    body: JSON.stringify({ word: word })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Now we have the word ID, delete it
-                        return fetch('{% url "delete_saved_word" %}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': getCookie('csrftoken')
-                            },
-                            body: JSON.stringify({ word_id: data.word_id })
-                        });
-                    } else {
-                        throw new Error(data.error || 'Failed to get word ID');
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Update button to show "Lưu" again
-                        this.innerHTML = 'Lưu';
+                        // Update button
+                        this.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
                         this.classList.replace('btn-success', 'btn-primary');
                         this.classList.replace('remove-word-btn', 'save-word-btn');
                         
@@ -202,16 +424,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         savedMessage.textContent = data.message || "The word has been removed from your vocabulary list.";
                         savedModal.show();
                     } else {
+                        // Show error
                         alert(data.error || 'An error occurred while removing the word.');
                         this.disabled = false;
-                        this.innerHTML = 'Đã lưu';
+                        this.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('An error occurred while removing the word.');
                     this.disabled = false;
-                    this.innerHTML = 'Đã lưu';
+                    this.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
                 });
             }
         });
@@ -235,4 +458,419 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+
+<!-- Flashcard functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize flashcards with debug info
+    console.log('Flashcards data as received:', '{{ flashcards|escapejs }}');
+    
+    let flashcardData = [];
+    try {
+        // Safely parse the JSON data
+        flashcardData = JSON.parse('{{ flashcards|escapejs }}');
+        console.log('Parsed flashcard data:', flashcardData);
+    } catch (e) {
+        console.error("Error parsing flashcards data:", e);
+        // Show error message in the flashcard container
+        document.getElementById('active-flashcard').innerHTML = 
+            '<div class="alert alert-warning">' +
+            '<h4>Unable to load flashcards</h4>' +
+            '<p>There was an error loading the flashcard data. Please try refreshing the page.</p>' +
+            '<p><small>Technical details: ' + e.message + '</small></p>' +
+            '</div>';
+    }
+    
+    let currentCardIndex = 0;
+    const totalCards = flashcardData.length;
+    
+    // Debug info about cards
+    console.log('Total flashcards:', totalCards);
+    
+    // Elements
+    const flashcardView = document.getElementById('flashcard-view');
+    const listView = document.getElementById('list-view');
+    const flashcardViewBtn = document.getElementById('flashcard-view-btn');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const activeFlashcard = document.getElementById('active-flashcard');
+    const prevBtn = document.getElementById('prev-card-btn');
+    const nextBtn = document.getElementById('next-card-btn');
+    const flipBtn = document.getElementById('flip-card-btn');
+    const progressBar = document.getElementById('flashcard-progress');
+    const progressCounter = document.getElementById('progress-counter');
+    const progressContainer = document.getElementById('flashcard-progress-container');
+    
+    // View switching
+    flashcardViewBtn.addEventListener('click', function() {
+        flashcardView.style.display = 'block';
+        listView.style.display = 'none';
+        flashcardViewBtn.classList.add('active');
+        listViewBtn.classList.remove('active');
+        progressContainer.style.display = 'block';
+    });
+    
+    listViewBtn.addEventListener('click', function() {
+        flashcardView.style.display = 'none';
+        listView.style.display = 'block';
+        flashcardViewBtn.classList.remove('active');
+        listViewBtn.classList.add('active');
+        progressContainer.style.display = 'none';
+    });
+    
+    // Function to render a flashcard
+    function renderFlashcard(index) {
+        if (!flashcardData.length) {
+            activeFlashcard.innerHTML = '<div class="alert alert-info">No flashcards available for this topic.</div>';
+            return;
+        }
+        
+        const card = flashcardData[index];
+        
+        // Create flashcard HTML
+        let flashcardHTML = `
+            <div class="flashcard" id="flashcard-${index}">
+                <div class="flashcard-front">
+                    <span class="word-badge badge level-${card.level || 'B1'}">${card.level || 'B1'}</span>
+                    <div class="flashcard-title">${card.front}</div>
+                    <div class="flashcard-instructions">
+                        <i class="bi bi-info-circle"></i> Click to see definition
+                    </div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h3>${card.front}</h3>
+                        <span class="badge level-${card.level || 'B1'}">${card.level || 'B1'}</span>
+                    </div>`;
+        
+        // Add part of speech if available
+        if (card.part_of_speech) {
+            flashcardHTML += `<p class="badge bg-secondary mb-2">${card.part_of_speech}</p>`;
+        }
+        
+        // Add pronunciation if available
+        if (card.pronunciation) {
+            flashcardHTML += `<div class="pronunciation mb-2">${card.pronunciation}</div>`;
+        }
+        
+        // Add audio player if available
+        if (card.audio) {
+            flashcardHTML += `
+                <div class="audio-player mb-3">
+                    <audio controls src="${card.audio}" class="audio-element w-100" style="height: 40px;">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>`;
+        }
+        
+        // Add definition
+        flashcardHTML += `<p><strong>Definition:</strong> ${card.back}</p>`;
+        
+        // Add example if available
+        if (card.example) {
+            flashcardHTML += `<p><strong>Example:</strong> <em>${card.example}</em></p>`;
+        }
+        
+        // Add synonyms if available
+        if (card.synonyms) {
+            flashcardHTML += `<p><strong>Synonyms:</strong> ${card.synonyms}</p>`;
+        }
+        
+        // Add save button if authenticated
+        if (document.querySelector('.save-word-btn, .remove-word-btn')) {
+            const isSaved = card.is_saved || false;
+            if (isSaved) {
+                flashcardHTML += `
+                    <button class="btn btn-success btn-sm mt-auto remove-word-btn w-100"
+                        data-word="${card.front}"
+                        data-definition="${card.back}"
+                        data-example="${card.example || ''}"
+                        data-topic="${'{{ topic|lower }}' || ''}"
+                        data-level="${card.level || 'B1'}"
+                        data-part-of-speech="${card.part_of_speech || ''}"
+                        data-synonyms="${card.synonyms || ''}"
+                        data-pronunciation="${card.pronunciation || ''}"
+                        data-audio="${card.audio || ''}">
+                        <i class="bi bi-bookmark-check-fill"></i> Saved
+                    </button>`;
+            } else {
+                flashcardHTML += `
+                    <button class="btn btn-primary btn-sm mt-auto save-word-btn w-100"
+                        data-word="${card.front}"
+                        data-definition="${card.back}"
+                        data-example="${card.example || ''}"
+                        data-topic="${'{{ topic|lower }}' || ''}"
+                        data-level="${card.level || 'B1'}"
+                        data-part-of-speech="${card.part_of_speech || ''}"
+                        data-synonyms="${card.synonyms || ''}"
+                        data-pronunciation="${card.pronunciation || ''}"
+                        data-audio="${card.audio || ''}">
+                        <i class="bi bi-bookmark-plus"></i> Save
+                    </button>`;
+            }
+        }
+        
+        flashcardHTML += `</div></div>`;
+        
+        // Set HTML and attach event listeners
+        activeFlashcard.innerHTML = flashcardHTML;
+        
+        // Add click event to flip card
+        const card_element = document.getElementById(`flashcard-${index}`);
+        card_element.addEventListener('click', function() {
+            this.classList.toggle('flipped');
+        });
+        
+        // Update progress
+        updateProgress(index);
+        
+        // Add events to save/remove buttons
+        initializeWordButtons();
+    }
+    
+    // Initialize word buttons (save/remove)
+    function initializeWordButtons() {
+        // Re-initialize save buttons
+        document.querySelectorAll('#active-flashcard .save-word-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();  // Prevent card flip
+                
+                // Disable button during save
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                
+                // Get word data
+                const word = this.dataset.word;
+                const definition = this.dataset.definition;
+                const example = this.dataset.example || '';
+                const topic = this.dataset.topic || '';
+                const level = this.dataset.level || 'B1';
+                const partOfSpeech = this.dataset.partOfSpeech || '';
+                const synonyms = this.dataset.synonyms || '';
+                const pronunciation = this.dataset.pronunciation || '';
+                const audio = this.dataset.audio || '';
+                
+                // Send AJAX request to save the word
+                fetch('{% url "save_vocabulary_word" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        word: word,
+                        definition: definition,
+                        example: example,
+                        topic: topic,
+                        level: level,
+                        part_of_speech: partOfSpeech,
+                        synonyms: synonyms,
+                        pronunciation: pronunciation,
+                        audio: audio
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update button
+                        this.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
+                        this.classList.replace('btn-primary', 'btn-success');
+                        this.classList.replace('save-word-btn', 'remove-word-btn');
+                        
+                        // Update in list view too
+                        document.querySelectorAll(`#list-view .save-word-btn[data-word="${word}"]`).forEach(btn => {
+                            btn.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
+                            btn.classList.replace('btn-primary', 'btn-success');
+                            btn.classList.replace('save-word-btn', 'remove-word-btn');
+                        });
+                        // Update saved state in data
+                        const wordIndex = currentCardIndex;
+                        const wordsData = JSON.parse('{{ words|escapejs }}');
+                        if (wordsData[wordIndex]) {
+                            wordsData[wordIndex].is_saved = true;
+                        }
+                        
+                        // Show success toast
+                        const savedModal = document.getElementById('wordSavedModal');
+                        const bsModal = new bootstrap.Modal(savedModal);
+                        document.getElementById('savedMessage').textContent = data.message || "The word has been added to your vocabulary list.";
+                        savedModal.show();
+                    } else {
+                        // Show error
+                        alert(data.error || 'An error occurred while saving the word.');
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
+                });
+            });
+        });
+        
+        // Re-initialize remove buttons
+        document.querySelectorAll('#active-flashcard .remove-word-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();  // Prevent card flip
+                
+                if (confirm('Are you sure you want to remove this word from your vocabulary list?')) {
+                    // Disable button during delete
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Removing...';
+                    
+                    // Get word data
+                    const word = this.dataset.word;
+                    
+                    // Send request to remove the word
+                    fetch('{% url "delete_saved_word" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ word: word })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update button
+                            this.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
+                            this.classList.replace('btn-success', 'btn-primary');
+                            this.classList.replace('remove-word-btn', 'save-word-btn');
+                            
+                            // Update in list view too
+                            document.querySelectorAll(`#list-view .remove-word-btn[data-word="${word}"]`).forEach(btn => {
+                                btn.innerHTML = '<i class="bi bi-bookmark-plus"></i> Save';
+                                btn.classList.replace('btn-success', 'btn-primary');
+                                btn.classList.replace('remove-word-btn', 'save-word-btn');
+                            });
+                            
+                            // Update saved state in data
+                            const wordIndex = currentCardIndex;
+                            const wordsData = JSON.parse('{{ words|escapejs }}');
+                            if (wordsData[wordIndex]) {
+                                wordsData[wordIndex].is_saved = false;
+                            }
+                            
+                            // Show success toast
+                            const savedModal = document.getElementById('wordSavedModal');
+                            const bsModal = new bootstrap.Modal(savedModal);
+                            document.getElementById('savedMessage').textContent = data.message || "The word has been removed from your vocabulary list.";
+                            savedModal.show();
+                        } else {
+                            // Show error
+                            alert(data.error || 'An error occurred while removing the word.');
+                            this.disabled = false;
+                            this.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Saved';
+                    });
+                }
+            });
+        });
+    }
+    
+    // Update progress bar and counter
+    function updateProgress(index) {
+        const percentage = ((index + 1) / totalCards) * 100;
+        progressBar.style.width = percentage + '%';
+        progressCounter.textContent = `${index + 1}/${totalCards}`;
+        
+        // Update navigation buttons
+        prevBtn.disabled = index === 0;
+        nextBtn.disabled = index === totalCards - 1;
+    }
+    
+    // Navigation events
+    prevBtn.addEventListener('click', function() {
+        if (currentCardIndex > 0) {
+            currentCardIndex--;
+            renderFlashcard(currentCardIndex);
+            
+            // Reset flip state
+            setTimeout(() => {
+                const card = document.querySelector('.flashcard');
+                if (card && card.classList.contains('flipped')) {
+                    card.classList.remove('flipped');
+                }
+            }, 100);
+        }
+    });
+    
+    nextBtn.addEventListener('click', function() {
+        if (currentCardIndex < totalCards - 1) {
+            currentCardIndex++;
+            renderFlashcard(currentCardIndex);
+            
+            // Reset flip state
+            setTimeout(() => {
+                const card = document.querySelector('.flashcard');
+                if (card && card.classList.contains('flipped')) {
+                    card.classList.remove('flipped');
+                }
+            }, 100);
+        }
+    });
+    
+    flipBtn.addEventListener('click', function() {
+        const card = document.querySelector('.flashcard');
+        if (card) {
+            card.classList.toggle('flipped');
+        }
+    });
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Initialize first card
+    if (flashcardData.length > 0) {
+        renderFlashcard(0);
+    } else {
+        // Show message when no flashcards available
+        activeFlashcard.innerHTML = '<div class="alert alert-info text-center">' +
+            '<i class="bi bi-exclamation-circle fs-1 mb-3"></i>' +
+            '<h4>No flashcards available</h4>' +
+            '<p>No vocabulary words found for this topic and selected difficulty level.</p>' +
+            '<a href="{% url "vocabulary_list" %}" class="btn btn-outline-primary mt-2">Back to Topics</a>' +
+            '</div>';
+        
+        // Hide progress and navigation
+        progressContainer.style.display = 'none';
+        document.querySelector('.flashcard-nav').style.display = 'none';
+    }
+    
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        // Only if flashcard view is active
+        if (flashcardView.style.display !== 'none') {
+            if (e.code === 'ArrowLeft' && currentCardIndex > 0) {
+                prevBtn.click();
+            } else if (e.code === 'ArrowRight' && currentCardIndex < totalCards - 1) {
+                nextBtn.click();
+            } else if (e.code === 'Space') {
+                e.preventDefault();
+                flipBtn.click();
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

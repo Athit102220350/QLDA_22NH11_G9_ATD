@@ -13,10 +13,27 @@
     <div class="row mb-4">
         <div class="col-md-8">
             <h1 class="display-5 mb-3">English Vocabulary</h1>
-            <p class="lead">Browse vocabulary words by first letter:</p>
+            <p class="lead">Browse vocabulary words by topic:</p>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Filter by Level</h5>
+                    <form method="get" id="level-filter-form">
+                        <select name="level" class="form-select" id="level-filter" onchange="this.form.submit()">
+                            {% for level in difficulty_levels %}
+                                <option value="{{ level.code }}" {% if selected_level == level.code %}selected{% endif %}>
+                                    {{ level.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
-      <!-- Loading indicator -->
+    
+    <!-- Loading indicator -->
     <div id="loading-indicator" class="text-center mb-4" style="display: none;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -24,30 +41,148 @@
         <p class="mt-2">Loading vocabulary words...</p>
     </div>
 
+    {% if selected_level != 'all' %}
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-filter"></i> 
+            Showing words for level: <strong>{{ selected_level }}</strong> 
+            <a href="{% url 'vocabulary_list' %}" class="alert-link float-end">Clear filter</a>
+        </div>
+    {% endif %}
+
     <div class="row">
-        {% for topic in topics %}
-            <div class="col-md-3 col-sm-6 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body text-center">
-                        <h2 class="display-4">{{ topic.topic }}</h2>
-                        <p class="text-muted">{{ topic.count }} words</p>
-                        <a href="{% url 'vocabulary_topic' topic.topic %}" class="btn btn-primary vocabulary-link">
-                            Browse Words
-                        </a>
+        {% if topics %}
+            {% for topic in topics %}
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="card h-100 shadow-sm topic-card">
+                        <div class="card-body text-center">
+                            <h2 class="topic-title">{{ topic.display_name }}</h2>
+                            <div class="topic-count mb-3">
+                                <span class="badge bg-primary rounded-pill">{{ topic.count }} words</span>
+                                {% if selected_level != 'all' %}
+                                    <span class="badge bg-secondary rounded-pill">Level {{ selected_level }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'vocabulary_topic' topic.topic %}{% if selected_level != 'all' %}?level={{ selected_level }}{% endif %}" 
+                               class="btn btn-outline-primary vocabulary-link">
+                                Browse Words
+                            </a>
+                        </div>
+                        <div class="card-footer bg-transparent text-muted small">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-book"></i> Topic
+                                </span>
+                                <span>
+                                    <i class="bi bi-lightning-charge"></i> Various Levels
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    No vocabulary topics found for the selected level.
+                    <a href="{% url 'vocabulary_list' %}" class="alert-link">View all levels</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- No results message -->
+    {% if not topics %}
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="card-title">No Topics Found</h3>
+                    <p class="card-text">No vocabulary topics match your current filter.</p>
+                    <a href="{% url 'vocabulary_list' %}" class="btn btn-outline-warning">Clear Filter</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Information cards -->
+    <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">About CEFR Levels</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">A1-A2</div>
+                                Basic/Beginner level words
+                            </div>
+                            <span class="badge bg-primary rounded-pill">Elementary</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">B1-B2</div>
+                                Intermediate level words
+                            </div>
+                            <span class="badge bg-success rounded-pill">Intermediate</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">C1-C2</div>
+                                Advanced level words
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill">Advanced</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 mb-4">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Learning Tips</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-check-circle text-success"></i> Focus on your level</h6>
+                            <p class="small">Choose words that match your current proficiency level for effective learning.</p>
+                            
+                            <h6><i class="bi bi-check-circle text-success"></i> Learn by topics</h6>
+                            <p class="small">Focusing on specific topics helps create meaningful connections between words.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-check-circle text-success"></i> Regular practice</h6>
+                            <p class="small">Review your vocabulary regularly to move words into long-term memory.</p>
+                            
+                            <h6><i class="bi bi-check-circle text-success"></i> Save favorites</h6>
+                            <p class="small">Add important words to your favorites for quick access during your studies.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        {% endfor %}
+        </div>
     </div>
 
     <!-- JavaScript to show loading indicator -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Show loading indicator when clicking on vocabulary links
             const links = document.querySelectorAll('.vocabulary-link');
             links.forEach(link => {
                 link.addEventListener('click', function() {
                     document.getElementById('loading-indicator').style.display = 'block';
                 });
+            });
+            
+            // Preserve filter when navigating
+            const levelFilter = document.getElementById('level-filter');
+            levelFilter.addEventListener('change', function() {
+                document.getElementById('loading-indicator').style.display = 'block';
+                document.getElementById('level-filter-form').submit();
             });
         });
     </script>

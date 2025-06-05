@@ -118,6 +118,8 @@ def profile(request):
     
     return render(request, 'profile.html', context)
 
+# Replace the existing process_message function or update the relevant parts
+
 @csrf_exempt
 def process_message(request):
     """Handle chatbot API interaction."""
@@ -150,7 +152,8 @@ def process_message(request):
                 words = user_message.strip().split()
                 if words:
                     word_to_lookup = words[0].lower().strip('.,;:!?()"\'')
-                    word_info = vocabulary_enhancer.get_word_info(word_to_lookup)
+                    # Use the new lookup_vocabulary function instead of get_word_info
+                    word_info = vocabulary_enhancer.lookup_vocabulary(word_to_lookup)
                     
                     response_data = {
                         'response_type': 'vocabulary',
@@ -171,7 +174,8 @@ def process_message(request):
                 if len(parts) > 1:
                     word = parts[0].strip()
                     context = parts[1].strip()
-                    alternatives = vocabulary_enhancer.suggest_alternative_words(word, context)
+                    # Use the new find_word_alternatives function instead of suggest_alternative_words
+                    alternatives = vocabulary_enhancer.find_word_alternatives(word, context)
                     
                     response_data = {
                         'response_type': 'alternatives',

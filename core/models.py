@@ -35,6 +35,21 @@ class LearningProgress(models.Model):
         return f"{self.user.username}'s {self.activity_type} progress on {self.timestamp.strftime('%Y-%m-%d')}"
 
 
+# class SavedWord(models.Model):
+#     """Words saved by users for later study"""
+#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_words')
+#     word = models.CharField(max_length=100)
+#     definition = models.TextField()
+#     example = models.TextField(blank=True, null=True)
+#     date_added = models.DateTimeField(auto_now_add=True)
+#     mastered = models.BooleanField(default=False)
+    
+#     class Meta:
+#         unique_together = ('user', 'word')
+#         ordering = ['-date_added']
+    
+#     def __str__(self):
+#         return f"{self.user.username} - {self.word}"
 class SavedWord(models.Model):
     """Words saved by users for later study"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_words')
@@ -44,13 +59,48 @@ class SavedWord(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     mastered = models.BooleanField(default=False)
     
+    # New fields
+    topic = models.CharField(max_length=100, blank=True, null=True, choices=[
+        ('business', 'Business'),
+        ('sport', 'Sport'),
+        ('politics', 'Politics'),
+        ('technology', 'Technology'),
+        ('education', 'Education'),
+        ('health', 'Health'),
+        ('entertainment', 'Entertainment'),
+        ('science', 'Science'),
+        ('travel', 'Travel'),
+        ('food', 'Food'),
+        ('other', 'Other')
+    ])
+    
+    level = models.CharField(max_length=20, blank=True, null=True,
+                            choices=[('beginner', 'Beginner'),
+                                    ('intermediate', 'Intermediate'),
+                                    ('advanced', 'Advanced')])
+    
+    part_of_speech = models.CharField(max_length=50, blank=True, null=True, choices=[
+        ('noun', 'Noun'),
+        ('verb', 'Verb'),
+        ('adjective', 'Adjective'),
+        ('adverb', 'Adverb'),
+        ('pronoun', 'Pronoun'),
+        ('preposition', 'Preposition'),
+        ('conjunction', 'Conjunction'),
+        ('interjection', 'Interjection'),
+        ('determiner', 'Determiner')
+    ])
+    
+    synonyms = models.TextField(blank=True, null=True, help_text="Comma-separated synonyms")
+    pronunciation = models.CharField(max_length=100, blank=True, null=True)
+    audio = models.FileField(upload_to='vocabulary_audio/', blank=True, null=True)
+    
     class Meta:
         unique_together = ('user', 'word')
         ordering = ['-date_added']
     
     def __str__(self):
         return f"{self.user.username} - {self.word}"
-
 
 class CompletedLesson(models.Model):
     """Track completed lessons"""
