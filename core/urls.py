@@ -28,4 +28,11 @@ urlpatterns = [
     path('api/save-word/', views.save_vocabulary_word, name='save_vocabulary_word'),
     path('api/mark-word-mastered/', views.mark_word_mastered, name='mark_word_mastered'),
     path('api/delete-word/', views.delete_saved_word, name='delete_saved_word'),
+
+        # Mock Test URLs
+    path('mock-test/', views.mock_test_home, name='mock_test_home'),
+    path('mock-test/<str:test_type>/', views.mock_test_start, name='mock_test_start'),
+    path('mock-test/<str:test_type>/submit/', views.mock_test_submit, name='mock_test_submit'),
+    path('mock-test/results/<int:result_id>/', views.mock_test_results, name='mock_test_results'),
+    path('mock-test/history/', views.mock_test_history, name='mock_test_history'),
 ]

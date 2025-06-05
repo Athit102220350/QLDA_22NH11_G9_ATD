@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Results - {{ result.test_type|title }} - English Learning Website{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .result-header {
+        background: linear-gradient(to right, #4e73df, #224abe);
+        color: white;
+        padding: 2rem;
+    }
+    
+    .level-badge {
+        font-size: 2rem;
+        display: inline-block;
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        border-radius: 50%;
+        text-align: center;
+        margin-right: 1rem;
+        background-color: white;
+        color: #224abe;
+        font-weight: 700;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-score-card {
+        transition: transform 0.2s ease;
+    }
+    
+    .section-score-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .score-circle {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+        font-weight: 600;
+        font-size: 1.8rem;
+        margin: 0 auto 1rem;
+    }
+    
+    .suggestion-card {
+        background-color: #f8f9fa;
+        border-left: 5px solid #4e73df;
+    }
+    
+    .reading-passage {
+        background-color: #f8f9fa;
+        border-left: 4px solid #4e73df;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+    
+    .answer-option {
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .answer-option.correct {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-left: 4px solid #28a745;
+    }
+    
+    .answer-option.incorrect {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 4px solid #dc3545;
+    }
+    
+    .answer-option.user-selected {
+        font-weight: 600;
+    }
+    
+    .section-tab {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="mb-4">
+        <a href="{% url 'mock_test_history' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Test History
+        </a>
+    </div>
+    
+    <div class="result-card mb-5">
+        <div class="result-header">
+            <div class="d-flex align-items-center">
+                <div class="level-badge">{{ result.level_achieved }}</div>
+                <div>
+                    <h1 class="mb-2">Your Test Results</h1>
+                    <p class="lead mb-0">{{ result.test_type|title }} Test: {{ result.topic|title }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="row align-items-center mb-4">
+                <div class="col-md-7">
+                    <h2 class="mb-4">Score Summary</h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <h1 class="display-4 mb-0 fw-bold">{{ result.score }}%</h1>
+                                    <p class="text-muted">Overall Score</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <div class="d-flex align-items-baseline">
+                                        <h3 class="mb-0">{{ result.correct_answers }}/{{ result.total_questions }}</h3>
+                                        <span class="ms-2 text-muted">correct answers</span>
+                                    </div>
+                                    <p class="text-muted">Completed on {{ result.created_at|date:"F j, Y" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Your CEFR Level: {{ result.level_achieved }}</h5>
+                            <p class="card-text">
+                                {% if result.level_achieved == 'A1' %}
+                                    <strong>Beginner:</strong> You can understand and use basic phrases and expressions.
+                                {% elif result.level_achieved == 'A2' %}
+                                    <strong>Elementary:</strong> You can communicate in simple and routine tasks.
+                                {% elif result.level_achieved == 'B1' %}
+                                    <strong>Intermediate:</strong> You can deal with most situations while traveling.
+                                {% elif result.level_achieved == 'B2' %}
+                                    <strong>Upper Intermediate:</strong> You can interact with fluency and spontaneity.
+                                {% elif result.level_achieved == 'C1' %}
+                                    <strong>Advanced:</strong> You can use language flexibly and effectively.
+                                {% elif result.level_achieved == 'C2' %}
+                                    <strong>Proficient:</strong> You can express yourself fluently and precisely.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <h3 class="mb-4">Section Breakdown</h3>
+            <div class="row">
+                {% for section, data in section_scores.items %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 section-score-card">
+                        <div class="card-body text-center p-4">
+                            <div class="score-circle 
+                                {% if section == 'reading' %}bg-primary
+                                {% elif section == 'grammar' %}bg-success
+                                {% elif section == 'vocabulary' %}bg-warning
+                                {% else %}bg-primary{% endif %}">
+                                {{ data.percentage }}%
+                            </div>
+                            <h4>{{ section|title }}</h4>
+                            <p class="mb-0">{{ data.score }} / {{ data.total }} correct</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Answers Review Section -->
+    <div class="card mb-5">
+        <div class="card-header bg-light">
+            <h3 class="mb-0"><i class="bi bi-check2-circle"></i> Review Your Answers</h3>
+        </div>
+        <div class="card-body">
+            <!-- Tab navigation -->
+            <ul class="nav nav-tabs mb-4" id="answerTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="reading-tab" data-bs-toggle="tab" data-bs-target="#reading" type="button" role="tab">Reading</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="grammar-tab" data-bs-toggle="tab" data-bs-target="#grammar" type="button" role="tab">Grammar</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vocabulary-tab" data-bs-toggle="tab" data-bs-target="#vocabulary" type="button" role="tab">Vocabulary</button>
+                </li>
+            </ul>
+            
+            <!-- Tab content -->
+            <div class="tab-content" id="answerTabsContent">
+                <!-- Reading -->
+                <div class="tab-pane fade show active" id="reading" role="tabpanel">
+                    {% for passage in sections.reading %}
+                        <div class="mb-5">
+                            <div class="reading-passage mb-3">
+                                <p>{{ passage.text|linebreaks }}</p>
+                            </div>
+                            
+                            {% for question in passage.questions %}
+                                <div class="mb-4">
+                                    <h5>Question {{ forloop.counter }}: {{ question.question_text }}</h5>
+                                    
+                                    {% for option in question.options %}
+                                        <div class="answer-option {% if forloop.counter0 == question.correct_answer %}correct{% elif forloop.counter0 == question.user_answer and forloop.counter0 != question.correct_answer %}incorrect{% endif %} {% if forloop.counter0 == question.user_answer %}user-selected{% endif %}">
+                                            <div>
+                                                <span class="me-2">{{ forloop.counter }}.</span>
+                                                {{ option }}
+                                                
+                                                {% if forloop.counter0 == question.correct_answer %}
+                                                    <span class="ms-2 text-success"><i class="bi bi-check-circle-fill"></i> Correct Answer</span>
+                                                {% elif forloop.counter0 == question.user_answer %}
+                                                    <span class="ms-2 text-danger"><i class="bi bi-x-circle-fill"></i> Your Answer</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr class="my-4">
+                    {% endfor %}
+                </div>
+                
+                <!-- Grammar -->
+                <div class="tab-pane fade" id="grammar" role="tabpanel">
+                    {% for question in sections.grammar %}
+                        <div class="mb-4">
+                            <h5>Question {{ forloop.counter }}</h5>
+                            <p class="mb-3">{{ question.sentence }}</p>
+                            
+                            {% for option in question.options %}
+                                <div class="answer-option {% if forloop.counter0 == question.correct_answer %}correct{% elif forloop.counter0 == question.user_answer and forloop.counter0 != question.correct_answer %}incorrect{% endif %} {% if forloop.counter0 == question.user_answer %}user-selected{% endif %}">
+                                    <div>
+                                        <span class="me-2">{{ forloop.counter }}.</span>
+                                        {{ option }}
+                                        
+                                        {% if forloop.counter0 == question.correct_answer %}
+                                            <span class="ms-2 text-success"><i class="bi bi-check-circle-fill"></i> Correct Answer</span>
+                                        {% elif forloop.counter0 == question.user_answer %}
+                                            <span class="ms-2 text-danger"><i class="bi bi-x-circle-fill"></i> Your Answer</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr class="my-4">
+                    {% endfor %}
+                </div>
+                
+                <!-- Vocabulary -->
+                <div class="tab-pane fade" id="vocabulary" role="tabpanel">
+                    {% for question in sections.vocabulary %}
+                        <div class="mb-4">
+                            <h5>Question {{ forloop.counter }}</h5>
+                            <p class="mb-1">Word: <strong>{{ question.word }}</strong></p>
+                            <p class="mb-3">{{ question.question }}</p>
+                            
+                            {% for option in question.options %}
+                                <div class="answer-option {% if forloop.counter0 == question.correct_answer %}correct{% elif forloop.counter0 == question.user_answer and forloop.counter0 != question.correct_answer %}incorrect{% endif %} {% if forloop.counter0 == question.user_answer %}user-selected{% endif %}">
+                                    <div>
+                                        <span class="me-2">{{ forloop.counter }}.</span>
+                                        {{ option }}
+                                        
+                                        {% if forloop.counter0 == question.correct_answer %}
+                                            <span class="ms-2 text-success"><i class="bi bi-check-circle-fill"></i> Correct Answer</span>
+                                        {% elif forloop.counter0 == question.user_answer %}
+                                            <span class="ms-2 text-danger"><i class="bi bi-x-circle-fill"></i> Your Answer</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr class="my-4">
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Study Recommendations Section -->
+    <div class="card mb-5">
+        <div class="card-header bg-light">
+            <h3 class="mb-0"><i class="bi bi-lightbulb"></i> Study Recommendations</h3>
+        </div>
+        <div class="card-body p-4">
+            <div class="suggestion-card p-4 mb-4">
+                <h4 class="mb-3">General Recommendations</h4>
+                <p class="mb-0">{{ suggestions.general }}</p>
+            </div>
+            
+            <h4 class="mb-3">Section-specific Recommendations</h4>
+            <div class="row">
+                {% for section, suggestion in suggestions.sections.items %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ section|title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ suggestion }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'mock_test_history' %}" class="btn btn-outline-primary">
+            <i class="bi bi-clock-history"></i> Back to Test History
+        </a>
+        <a href="{% url 'mock_test_home' %}" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat"></i> Take Another Test
+        </a>
+    </div>
+</div>
+{% endblock %}

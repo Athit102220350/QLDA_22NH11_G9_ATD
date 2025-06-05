@@ -1,0 +1,416 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ test.test_type|title }} Mock Test - {{ test.topic|title }} - English Learning Website{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Test timer */
+    #test-timer {
+        position: sticky;
+        top: 20px;
+        z-index: 1000;
+    }
+    
+    /* Section styling */
+    .test-section {
+        margin-bottom: 2rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .section-header {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .section-body {
+        padding: 1.5rem;
+    }
+    
+    /* Reading passage */
+    .reading-passage {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
+        line-height: 1.7;
+    }
+    
+    /* Question styling */
+    .question-container {
+        margin-bottom: 2rem;
+    }
+    
+    .question-text {
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+    
+    .option-label {
+        display: block;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    
+    .option-label:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .form-check-input:checked + .option-label {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+    
+    /* Progress indicators */
+    .progress {
+        height: 0.5rem;
+    }
+    
+    .section-nav {
+        position: sticky;
+        bottom: 20px;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ test.test_type|title }} Mock Test: {{ test.topic|title }}</h1>
+        <div id="test-timer" class="card shadow-sm">
+            <div class="card-body py-2 px-3">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock"></i> Time: <span id="timer">45:00</span>
+                </h5>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info">
+        <h5><i class="bi bi-info-circle-fill"></i> Test Instructions</h5>
+        <p>This test consists of three sections: Reading, Grammar, and Vocabulary. 
+           You have 45 minutes to complete the test.</p>
+        <ul>
+            <li>Answer all questions to the best of your ability</li>
+            <li>You can navigate between sections using the section buttons</li>
+            <li>Your progress will be saved as you answer questions</li>
+            <li>Submit your test when you're finished</li>
+        </ul>
+    </div>
+    
+    <form id="test-form" method="post" action="{% url 'mock_test_submit' test.test_type %}">
+        {% csrf_token %}
+        <input type="hidden" name="topic" value="{{ test.topic }}">
+        
+        <!-- Section navigation -->
+        <div class="card mb-4">
+            <div class="card-body p-3">
+                <div class="nav nav-pills mb-3" id="nav-tab" role="tablist">
+                    <button class="nav-link active" id="nav-reading-tab" data-bs-toggle="pill" data-bs-target="#nav-reading" type="button" role="tab">
+                        <i class="bi bi-book"></i> Reading
+                    </button>
+                    <button class="nav-link" id="nav-grammar-tab" data-bs-toggle="pill" data-bs-target="#nav-grammar" type="button" role="tab">
+                        <i class="bi bi-pencil"></i> Grammar
+                    </button>
+                    <button class="nav-link" id="nav-vocabulary-tab" data-bs-toggle="pill" data-bs-target="#nav-vocabulary" type="button" role="tab">
+                        <i class="bi bi-journals"></i> Vocabulary
+                    </button>
+                </div>
+                
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         id="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div class="small text-muted mt-1 text-end">
+                    <span id="answered-count">0</span> of <span id="total-count">{{ total_questions }}</span> questions answered
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="nav-tabContent">
+            <!-- Reading Section -->
+            <div class="tab-pane fade show active" id="nav-reading" role="tabpanel" aria-labelledby="nav-reading-tab">
+                <div class="test-section">
+                    <div class="section-header">
+                        <h3><i class="bi bi-book"></i> Reading Comprehension</h3>
+                        <p>Read each passage carefully and answer the questions that follow.</p>
+                    </div>
+                    
+                    <div class="section-body">
+                        {% for reading in test.reading %}
+                        <div class="mb-5">
+                            <div class="reading-passage">
+                                {{ reading.text|linebreaks }}
+                            </div>
+                            
+                            {% for question in reading.questions %}
+                            <div class="question-container">
+                                <p class="question-text">
+                                    <strong>Question {{ forloop.counter }}:</strong> {{ question.question }}
+                                </p>
+                                <div class="options-container">
+                                    {% for option in question.options %}
+                                    <div class="form-check">
+                                        <input class="form-check-input visually-hidden answer-option" 
+                                               type="radio" 
+                                               name="reading_{{ reading.id }}_q{{ forloop.parentloop.counter0 }}" 
+                                               id="reading_{{ reading.id }}_q{{ forloop.parentloop.counter0 }}_opt{{ forloop.counter0 }}"
+                                               value="{{ forloop.counter0 }}">
+                                        <label class="option-label" for="reading_{{ reading.id }}_q{{ forloop.parentloop.counter0 }}_opt{{ forloop.counter0 }}">
+                                            {{ option }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary" onclick="switchToSection('grammar')">
+                                Next: Grammar <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grammar Section -->
+            <div class="tab-pane fade" id="nav-grammar" role="tabpanel" aria-labelledby="nav-grammar-tab">
+                <div class="test-section">
+                    <div class="section-header">
+                        <h3><i class="bi bi-pencil"></i> Grammar</h3>
+                        <p>Select the correct option to complete each sentence.</p>
+                    </div>
+                    
+                    <div class="section-body">
+                        {% for grammar in test.grammar %}
+                        <div class="question-container">
+                            <p class="question-text">
+                                <strong>Question {{ forloop.counter }}:</strong> {{ grammar.sentence }}
+                            </p>
+                            <div class="options-container">
+                                {% for option in grammar.options %}
+                                <div class="form-check">
+                                    <input class="form-check-input visually-hidden answer-option" 
+                                           type="radio" 
+                                           name="grammar_{{ grammar.id }}" 
+                                           id="grammar_{{ grammar.id }}_opt{{ forloop.counter0 }}"
+                                           value="{{ forloop.counter0 }}">
+                                    <label class="option-label" for="grammar_{{ grammar.id }}_opt{{ forloop.counter0 }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="switchToSection('reading')">
+                                <i class="bi bi-arrow-left"></i> Back to Reading
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="switchToSection('vocabulary')">
+                                Next: Vocabulary <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vocabulary Section -->
+            <div class="tab-pane fade" id="nav-vocabulary" role="tabpanel" aria-labelledby="nav-vocabulary-tab">
+                <div class="test-section">
+                    <div class="section-header">
+                        <h3><i class="bi bi-journals"></i> Vocabulary</h3>
+                        <p>Choose the correct synonyms or antonyms for the given words.</p>
+                    </div>
+                    
+                    <div class="section-body">
+                        {% for vocab in test.vocabulary %}
+                        <div class="question-container">
+                            <p class="question-text">
+                                <strong>Question {{ forloop.counter }}:</strong> 
+                                {{ vocab.question }}
+                                <span class="fw-bold fst-italic">"{{ vocab.word }}"</span>
+                            </p>
+                            <div class="options-container">
+                                {% for option in vocab.options %}
+                                <div class="form-check">
+                                    <input class="form-check-input visually-hidden answer-option" 
+                                           type="radio" 
+                                           name="vocabulary_{{ vocab.id }}" 
+                                           id="vocabulary_{{ vocab.id }}_opt{{ forloop.counter0 }}"
+                                           value="{{ forloop.counter0 }}">
+                                    <label class="option-label" for="vocabulary_{{ vocab.id }}_opt{{ forloop.counter0 }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="switchToSection('grammar')">
+                                <i class="bi bi-arrow-left"></i> Back to Grammar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="card section-nav">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <a href="{% url 'mock_test_home' %}" class="btn btn-outline-secondary" 
+                   onclick="return confirm('Are you sure you want to exit? Your progress will be lost.')">
+                    <i class="bi bi-x-circle"></i> Exit Test
+                </a>
+                
+                <div>
+                    <span id="submit-message" class="text-muted me-2"></span>
+                    <button type="submit" id="submit-test" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Submit Test
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Time's Up Modal -->
+<div class="modal fade" id="timesUpModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-alarm"></i> Time's Up!</h5>
+            </div>
+            <div class="modal-body">
+                <p>Your test time has expired. Your answers will be automatically submitted.</p>
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Submitting...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Timer functionality
+        const timerDisplay = document.getElementById('timer');
+        const testForm = document.getElementById('test-form');
+        const timesUpModal = new bootstrap.Modal(document.getElementById('timesUpModal'));
+        
+        // Set test duration (45 minutes)
+        let totalSeconds = 45 * 60;
+        
+        // Update timer every second
+        const timerInterval = setInterval(function() {
+            totalSeconds--;
+            
+            if (totalSeconds <= 0) {
+                clearInterval(timerInterval);
+                timesUpModal.show();
+                
+                // Submit form after 3 seconds
+                setTimeout(function() {
+                    testForm.submit();
+                }, 3000);
+            }
+            
+            // Format time as MM:SS
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Change color when time is running low
+            if (totalSeconds < 300) { // 5 minutes
+                timerDisplay.classList.add('text-danger');
+                timerDisplay.classList.add('fw-bold');
+            }
+        }, 1000);
+        
+        // Progress tracking
+        const answerOptions = document.querySelectorAll('.answer-option');
+        const progressBar = document.getElementById('progress-bar');
+        const answeredCount = document.getElementById('answered-count');
+        const totalCount = document.getElementById('total-count');
+        const submitMessage = document.getElementById('submit-message');
+        
+        // Count questions
+        const totalQuestions = parseInt(totalCount.textContent);
+        let answeredQuestions = 0;
+        
+        // Keep track of answered questions by name
+        const answeredQuestionNames = new Set();
+        
+        // Radio button change event
+        answerOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                // Get the question name (e.g., "reading_r1_q0")
+                const name = this.getAttribute('name');
+                
+                // If this question wasn't previously answered, increment the counter
+                if (!answeredQuestionNames.has(name)) {
+                    answeredQuestionNames.add(name);
+                    answeredQuestions++;
+                    
+                    // Update the counter display
+                    answeredCount.textContent = answeredQuestions;
+                    
+                    // Update progress bar
+                    const progressPercent = (answeredQuestions / totalQuestions) * 100;
+                    progressBar.style.width = progressPercent + '%';
+                    
+                    // Update submit message
+                    if (answeredQuestions < totalQuestions) {
+                        submitMessage.textContent = `${totalQuestions - answeredQuestions} questions remaining`;
+                    } else {
+                        submitMessage.textContent = 'All questions answered!';
+                        submitMessage.classList.remove('text-muted');
+                        submitMessage.classList.add('text-success');
+                        submitMessage.classList.add('fw-bold');
+                    }
+                }
+            });
+        });
+        
+        // Form submission validation
+        testForm.addEventListener('submit', function(event) {
+            if (answeredQuestions < totalQuestions) {
+                if (!confirm(`You have only answered ${answeredQuestions} out of ${totalQuestions} questions. Are you sure you want to submit?`)) {
+                    event.preventDefault();
+                }
+            }
+        });
+    });
+    
+    // Function to switch between sections
+    function switchToSection(section) {
+        // Get the tab element
+        const tabElement = document.getElementById(`nav-${section}-tab`);
+        
+        // Trigger the tab
+        bootstrap.Tab.getOrCreateInstance(tabElement).show();
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    }
+</script>
+{% endblock %}

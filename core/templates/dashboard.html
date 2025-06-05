@@ -14,6 +14,7 @@
                 <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">Profile</a>
                 <a href="{% url 'favorites' %}" class="list-group-item list-group-item-action">My Vocabulary</a>
                 <a href="{% url 'progress' %}" class="list-group-item list-group-item-action">Learning Progress</a>
+                <a href="{% url 'mock_test_history' %}" class="list-group-item list-group-item-action">Test History</a>
             </div>
         </div>
     </div>
@@ -56,6 +57,79 @@
                         <a href="{% url 'profile' %}" class="btn btn-sm btn-primary">Update Level</a>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- New Mock Test History Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Recent Mock Tests</h4>
+                <a href="{% url 'mock_test_home' %}" class="btn btn-sm btn-light">
+                    <i class="bi bi-pencil-square"></i> Take a Test
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_mock_tests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Test Type</th>
+                                    <th>Topic</th>
+                                    <th>Score</th>
+                                    <th>Level</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test in recent_mock_tests %}
+                                    <tr>
+                                        <td>{{ test.created_at|date:"M d, Y" }}</td>
+                                        <td>{{ test.test_type|title }}</td>
+                                        <td>{{ test.topic|title }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    <div class="progress-bar" role="progressbar" style="width: '{{ test.score }}%'"></div>
+                                                </div>
+                                                <span class="text-nowrap">{{ test.score }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if test.level_achieved == 'A1' %}bg-secondary
+                                                {% elif test.level_achieved == 'A2' %}bg-info
+                                                {% elif test.level_achieved == 'B1' %}bg-primary
+                                                {% elif test.level_achieved == 'B2' %}bg-success
+                                                {% elif test.level_achieved == 'C1' %}bg-warning
+                                                {% elif test.level_achieved == 'C2' %}bg-danger
+                                                {% endif %}">
+                                                {{ test.level_achieved }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'mock_test_results' test.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'mock_test_history' %}" class="btn btn-outline-primary">View Full Test History</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <h5>No mock tests taken yet</h5>
+                        <p>Take a mock test to assess your English proficiency level and track your progress.</p>
+                        <a href="{% url 'mock_test_home' %}" class="btn btn-primary mt-2">
+                            <i class="bi bi-pencil-square"></i> Take Your First Test
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
         
@@ -119,10 +193,10 @@
                                     <i class="bi bi-question-circle"></i>
                                 </span>
                             </a>
-                            <a href="{% url 'word_alternatives' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                Improve Your Word Choices
+                            <a href="{% url 'mock_test_home' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                Take a Mock Test
                                 <span class="badge bg-primary rounded-pill">
-                                    <i class="bi bi-arrow-repeat"></i>
+                                    <i class="bi bi-file-earmark-text"></i>
                                 </span>
                             </a>
                         </div>
@@ -169,4 +243,18 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+<style>
+    .progress {
+        height: 8px;
+        border-radius: 4px;
+    }
+    
+    .progress-bar {
+        background-color: #0d6efd;
+    }
+    
+    .table td, .table th {
+        vertical-align: middle;
+    }
+</style>
 {% endblock %}

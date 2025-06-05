@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Avg
-
+from django.utils import timezone
+import json
+from django.contrib import admin
 # Create your models here.
 class UserProfile(models.Model):
     """Extended user profile for learning data"""
@@ -279,3 +281,125 @@ class QuizProgress(models.Model):
             self.average_score = 0
             
         self.save()
+
+class MockTestResult(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    test_type = models.CharField(max_length=50)  # e.g., 'toeic', 'cambridge'
+    topic = models.CharField(max_length=50)      # e.g., 'business', 'technology'
+    score = models.PositiveIntegerField()        # overall percentage score
+    correct_answers = models.PositiveIntegerField()
+    total_questions = models.PositiveIntegerField()
+    level_achieved = models.CharField(max_length=5, default='A1')  # Add default='A1' here
+    user_answers = models.TextField(default="{}")  # JSON string storing user's answers
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s {self.test_type} test - {self.score}%"
+    
+    def get_section_scores(self):
+        """Calculate scores for each section"""
+        try:
+            # Parse user answers from JSON
+            user_answers = json.loads(self.user_answers)
+            
+            # Get the test data
+            from .mock_data.test_data import MOCK_TEST_DATA
+            test_data = MOCK_TEST_DATA[self.test_type][self.topic]
+            
+            # Initialize section scores
+            section_scores = {
+                'reading': {'score': 0, 'total': 0, 'percentage': 0},
+                'grammar': {'score': 0, 'total': 0, 'percentage': 0},
+                'vocabulary': {'score': 0, 'total': 0, 'percentage': 0}
+            }
+            
+            # Calculate reading scores
+            for reading in test_data['reading']:
+                for i, question in enumerate(reading['questions']):
+                    answer_key = f"reading_{reading['id']}_q{i}"
+                    if answer_key in user_answers:
+                        section_scores['reading']['total'] += 1
+                        if int(user_answers[answer_key]) == question['correct']:
+                            section_scores['reading']['score'] += 1
+            
+            # Calculate grammar scores
+            for grammar in test_data['grammar']:
+                answer_key = f"grammar_{grammar['id']}"
+                if answer_key in user_answers:
+                    section_scores['grammar']['total'] += 1
+                    if int(user_answers[answer_key]) == grammar['correct']:
+                        section_scores['grammar']['score'] += 1
+            
+            # Calculate vocabulary scores
+            for vocab in test_data['vocabulary']:
+                answer_key = f"vocabulary_{vocab['id']}"
+                if answer_key in user_answers:
+                    section_scores['vocabulary']['total'] += 1
+                    if int(user_answers[answer_key]) == vocab['correct']:
+                        section_scores['vocabulary']['score'] += 1
+            
+            # Calculate percentages
+            for section in section_scores:
+                if section_scores[section]['total'] > 0:
+                    section_scores[section]['percentage'] = round(
+                        (section_scores[section]['score'] / section_scores[section]['total']) * 100
+                    )
+            
+            return section_scores
+        except Exception as e:
+            # Return default section scores if there's an error
+            return {
+                'reading': {'score': 0, 'total': 0, 'percentage': 0},
+                'grammar': {'score': 0, 'total': 0, 'percentage': 0},
+                'vocabulary': {'score': 0, 'total': 0, 'percentage': 0}
+            }
+
+    def get_suggestions(self):
+        """Generate study suggestions based on test results"""
+        section_scores = self.get_section_scores()
+        
+        suggestions = {
+            'general': '',
+            'sections': {}
+        }
+        
+        # General suggestions based on overall score
+        if self.score < 40:
+            suggestions['general'] = "Focus on building your foundational English skills. Consider starting with basic grammar rules and vocabulary."
+        elif self.score < 70:
+            suggestions['general'] = "You have a good foundation. Work on expanding your vocabulary and practicing more complex grammar structures."
+        else:
+            suggestions['general'] = "You've demonstrated strong English skills. Continue to refine your knowledge with advanced reading materials and practice expressing complex ideas."
+        
+        # Section-specific suggestions
+        for section, data in section_scores.items():
+            if data['percentage'] < 50:
+                if section == 'reading':
+                    suggestions['sections'][section] = "Practice reading comprehension with varied texts. Focus on identifying main ideas and supporting details."
+                elif section == 'grammar':
+                    suggestions['sections'][section] = "Review basic grammar rules and practice with exercises focusing on sentence structure and verb tenses."
+                else:  # vocabulary
+                    suggestions['sections'][section] = "Build your vocabulary by learning new words in context through reading and listening to English content."
+            elif data['percentage'] < 80:
+                if section == 'reading':
+                    suggestions['sections'][section] = "Enhance your reading skills by practicing with more complex texts and focusing on inference and analysis."
+                elif section == 'grammar':
+                    suggestions['sections'][section] = "Continue practicing with intermediate grammar exercises, focusing on areas like conditionals and passive voice."
+                else:  # vocabulary
+                    suggestions['sections'][section] = "Expand your vocabulary by learning synonyms, antonyms, and context-specific usage of words."
+            else:
+                if section == 'reading':
+                    suggestions['sections'][section] = "Challenge yourself with advanced academic or technical texts to further refine your reading comprehension."
+                elif section == 'grammar':
+                    suggestions['sections'][section] = "Focus on mastering complex grammar structures and nuances in language usage."
+                else:  # vocabulary
+                    suggestions['sections'][section] = "Work on specialized vocabulary in areas of your interest to become more fluent in specific contexts."
+        
+        return suggestions
+    
+@admin.register(MockTestResult)
+class MockTestResultAdmin(admin.ModelAdmin):
+    list_display = ('user', 'test_type', 'topic', 'score', 'level_achieved', 'created_at')
+    list_filter = ('test_type', 'topic', 'level_achieved')
+    search_fields = ('user__username',)
+    date_hierarchy = 'created_at'

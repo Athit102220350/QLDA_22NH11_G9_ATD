@@ -8,6 +8,10 @@ from django.db.models import Avg, Max, Count, F, ExpressionWrapper, fields, Q
 from datetime import timedelta, datetime
 import json
 import requests
+import random
+from .models import MockTestResult
+from .mock_data.test_data import MOCK_TEST_DATA
+
 from django.views.decorators.csrf import csrf_exempt
 from core.ai.huggingface_integration import grammar_corrector, vocabulary_enhancer
 from .forms import CustomUserCreationForm, CustomAuthenticationForm, UserProfileUpdateForm, UserUpdateForm
@@ -76,24 +80,27 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    """View for user dashboard."""
-    user = request.user
+    """User dashboard view"""
+    # Get user's saved vocabulary words
+    saved_words = SavedWord.objects.filter(user=request.user).order_by('-date_added')
+    word_count = saved_words.count()
     
-    # Get user progress statistics
-    learning_progress = LearningProgress.objects.filter(user=user).order_by('-timestamp')[:5]
-    saved_words = SavedWord.objects.filter(user=user)
-    completed_lessons = CompletedLesson.objects.filter(user=user)
+    # Get lesson progress
+    lesson_count = QuizAttempt.objects.filter(user=request.user, completed=True).count()
     
-    context = {
-        'user': user,
-        'learning_progress': learning_progress,
+    # Get learning progress for activity feed
+    learning_progress = [] # This would come from your activity model
+    
+    # Get recent mock tests
+    recent_mock_tests = MockTestResult.objects.filter(user=request.user).order_by('-created_at')[:5]
+    
+    return render(request, 'dashboard.html', {
         'saved_words': saved_words,
-        'completed_lessons': completed_lessons,
-        'word_count': saved_words.count(),
-        'lesson_count': completed_lessons.count(),
-    }
-    
-    return render(request, 'dashboard.html', context)
+        'word_count': word_count,
+        'lesson_count': lesson_count,
+        'learning_progress': learning_progress,
+        'recent_mock_tests': recent_mock_tests
+    })
 
 @login_required
 def profile(request):
@@ -616,3 +623,258 @@ def quiz_progress(request):
     }
     
     return render(request, 'quiz_progress.html', context)
+
+
+
+@login_required
+def mock_test_home(request):
+    """Display the mock test homepage with test types and topics"""
+    return render(request, 'mock_test_home.html', {
+        'test_types': [('toeic', 'TOEIC'), ('cambridge', 'Cambridge')],
+        'topics': ['business', 'technology', 'education', 'health', 'travel']
+    })
+
+@login_required
+def mock_test_start(request, test_type):
+    """Start a mock test of the specified type"""
+    topic = request.GET.get('topic', 'business')
+    
+    # Check if the user has recently completed this test type/topic combination
+    recent_test = MockTestResult.objects.filter(
+        user=request.user,
+        test_type=test_type,
+        topic=topic,
+        created_at__gte=timezone.now() - timedelta(hours=1)  # Within the last hour
+    ).exists()
+    
+    if recent_test:
+        messages.warning(request, 
+            "You have already completed this test recently. Please try a different test or wait before retaking.")
+        return redirect('mock_test_home')
+    
+    # Check if test type and topic exist
+    if test_type not in MOCK_TEST_DATA or topic not in MOCK_TEST_DATA[test_type]:
+        messages.error(request, "The requested test is not available.")
+        return redirect('mock_test_home')
+    
+    # Get test data
+    test_data = MOCK_TEST_DATA[test_type][topic]
+    
+    # Prepare test content
+    test = {
+        'test_type': test_type,
+        'topic': topic,
+        'reading': test_data['reading'],
+        'grammar': test_data['grammar'],
+        'vocabulary': test_data['vocabulary']
+    }
+    
+    # Calculate total questions
+    total_questions = 0
+    for reading in test_data['reading']:
+        total_questions += len(reading['questions'])
+    total_questions += len(test_data['grammar'])
+    total_questions += len(test_data['vocabulary'])
+    
+    return render(request, 'mock_test.html', {
+        'test': test,
+        'total_questions': total_questions
+    })
+
+@login_required
+def mock_test_submit(request, test_type):
+    """Process the submitted mock test answers"""
+    if request.method != 'POST':
+        return redirect('mock_test_home')
+    
+    # Get form data
+    topic = request.POST.get('topic')
+    
+    # Check if test type and topic exist
+    if test_type not in MOCK_TEST_DATA or topic not in MOCK_TEST_DATA[test_type]:
+        messages.error(request, "The requested test is not available.")
+        return redirect('mock_test_home')
+    
+    # Get test data
+    test_data = MOCK_TEST_DATA[test_type][topic]
+    
+    # Process user answers
+    user_answers = {}
+    correct_answers = 0
+    total_questions = 0
+    
+    # Process reading answers
+    for reading in test_data['reading']:
+        for i, question in enumerate(reading['questions']):
+            total_questions += 1
+            answer_key = f"reading_{reading['id']}_q{i}"
+            user_answer = request.POST.get(answer_key)
+            
+            if user_answer is not None:
+                user_answers[answer_key] = user_answer
+                if int(user_answer) == question['correct']:
+                    correct_answers += 1
+    
+    # Process grammar answers
+    for grammar in test_data['grammar']:
+        total_questions += 1
+        answer_key = f"grammar_{grammar['id']}"
+        user_answer = request.POST.get(answer_key)
+        
+        if user_answer is not None:
+            user_answers[answer_key] = user_answer
+            if int(user_answer) == grammar['correct']:
+                correct_answers += 1
+    
+    # Process vocabulary answers
+    for vocab in test_data['vocabulary']:
+        total_questions += 1
+        answer_key = f"vocabulary_{vocab['id']}"
+        user_answer = request.POST.get(answer_key)
+        
+        if user_answer is not None:
+            user_answers[answer_key] = user_answer
+            if int(user_answer) == vocab['correct']:
+                correct_answers += 1
+    
+    # Calculate score percentage
+    score = round((correct_answers / total_questions) * 100) if total_questions > 0 else 0
+    
+    # Determine CEFR level based on score
+    level_achieved = 'A1'  # Default level
+    if score >= 95:
+        level_achieved = 'C2'
+    elif score >= 85:
+        level_achieved = 'C1'
+    elif score >= 70:
+        level_achieved = 'B2'
+    elif score >= 55:
+        level_achieved = 'B1'
+    elif score >= 40:
+        level_achieved = 'A2'
+    
+    # Create test result record
+    result = MockTestResult.objects.create(
+        user=request.user,
+        test_type=test_type,
+        topic=topic,
+        score=score,
+        correct_answers=correct_answers,
+        total_questions=total_questions,
+        level_achieved=level_achieved,
+        user_answers=json.dumps(user_answers)  # Store as JSON string
+    )
+    
+    # Redirect to results page
+    return redirect('mock_test_results', result_id=result.id)
+
+@login_required
+def mock_test_results(request, result_id):
+    """Display mock test results with detailed answers"""
+    # Get the test result
+    result = get_object_or_404(MockTestResult, id=result_id, user=request.user)
+    
+    # Get section scores and suggestions
+    section_scores = result.get_section_scores()
+    suggestions = result.get_suggestions()
+    
+    # Handle cases where user_answers might be missing
+    try:
+        # Get the test data and user answers
+        test_data = MOCK_TEST_DATA[result.test_type][result.topic]
+        user_answers = json.loads(getattr(result, 'user_answers', '{}'))
+        
+        # Prepare data for display
+        sections = {
+            'reading': [],
+            'grammar': [],
+            'vocabulary': []
+        }
+        
+        # Process reading answers
+        for reading in test_data['reading']:
+            section_data = {
+                'text': reading['text'],
+                'questions': []
+            }
+            
+            for j, question in enumerate(reading['questions']):
+                answer_key = f"reading_{reading['id']}_q{j}"
+                user_answer = user_answers.get(answer_key, -1)
+                
+                section_data['questions'].append({
+                    'question_text': question['question'],
+                    'options': question['options'],
+                    'correct_answer': question['correct'],
+                    'user_answer': int(user_answer) if user_answer != -1 else None,
+                    'is_correct': int(user_answer) == question['correct'] if user_answer != -1 else False
+                })
+            
+            sections['reading'].append(section_data)
+        
+        # Process grammar answers
+        for grammar in test_data['grammar']:
+            answer_key = f"grammar_{grammar['id']}"
+            user_answer = user_answers.get(answer_key, -1)
+            
+            sections['grammar'].append({
+                'sentence': grammar['sentence'],
+                'options': grammar['options'],
+                'correct_answer': grammar['correct'],
+                'user_answer': int(user_answer) if user_answer != -1 else None,
+                'is_correct': int(user_answer) == grammar['correct'] if user_answer != -1 else False
+            })
+        
+        # Process vocabulary answers
+        for vocab in test_data['vocabulary']:
+            answer_key = f"vocabulary_{vocab['id']}"
+            user_answer = user_answers.get(answer_key, -1)
+            
+            sections['vocabulary'].append({
+                'word': vocab['word'],
+                'question': vocab['question'],
+                'options': vocab['options'],
+                'correct_answer': vocab['correct'],
+                'user_answer': int(user_answer) if user_answer != -1 else None,
+                'is_correct': int(user_answer) == vocab['correct'] if user_answer != -1 else False
+            })
+    except Exception as e:
+        # If there's an error processing the user answers, create an empty structure
+        sections = {
+            'reading': [],
+            'grammar': [],
+            'vocabulary': []
+        }
+    
+    return render(request, 'mock_test_results.html', {
+        'result': result,
+        'section_scores': section_scores,
+        'suggestions': suggestions,
+        'sections': sections
+    })
+
+@login_required
+def mock_test_history(request):
+    """Display user's mock test history"""
+    # Get all test results for the current user, ordered by most recent
+    results = MockTestResult.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Debug output
+    print(f"User: {request.user.username} (ID: {request.user.id})")
+    print(f"Found {results.count()} test results")
+    for result in results:
+        print(f"Test ID: {result.id}, Type: {result.test_type}, Score: {result.score}, Created: {result.created_at}")
+    
+    # Add a debug message to the page
+    from django.contrib import messages
+    messages.info(request, f"Found {results.count()} test results for your account.")
+    
+    return render(request, 'mock_test_history.html', {
+        'results': results,
+        # Add debug info to template context
+        'debug_info': {
+            'user_id': request.user.id,
+            'result_count': results.count(),
+            'query': str(results.query)
+        }
+    })

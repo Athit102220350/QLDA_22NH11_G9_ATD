@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Mock Test Practice - English Learning Website{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .test-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .test-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .topic-badge {
+        display: inline-block;
+        margin: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .topic-badge:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Mock Test Practice</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <p class="lead">
+                Simulate real English proficiency tests to assess your skills and track your progress.
+            </p>
+            <p>
+                Each test includes three sections:
+            </p>
+            <ul>
+                <li><strong>Reading Comprehension:</strong> Read passages and answer multiple-choice questions</li>
+                <li><strong>Grammar:</strong> Fill in the blanks with the correct grammatical forms</li>
+                <li><strong>Vocabulary:</strong> Identify synonyms and antonyms of given words</li>
+            </ul>
+            <p>
+                After completing a test, you'll receive:
+            </p>
+            <ul>
+                <li>Your overall score and CEFR level (A1-C2)</li>
+                <li>Performance breakdown by section</li>
+                <li>Personalized study recommendations</li>
+            </ul>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">CEFR Levels</h5>
+                    <p class="small">Your score will determine your CEFR level:</p>
+                    <ul class="list-unstyled small">
+                        <li><span class="badge bg-success">A1</span> Beginner (0-30%)</li>
+                        <li><span class="badge bg-info">A2</span> Elementary (31-50%)</li>
+                        <li><span class="badge bg-primary">B1</span> Intermediate (51-70%)</li>
+                        <li><span class="badge bg-primary">B2</span> Upper-Intermediate (71-85%)</li>
+                        <li><span class="badge bg-warning">C1</span> Advanced (86-95%)</li>
+                        <li><span class="badge bg-danger">C2</span> Proficiency (96-100%)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h2 class="mb-3">Available Tests</h2>
+    <div class="row mb-5">
+        {% for test_id, test_name in test_types %}
+        <div class="col-md-6 mb-4">
+            <div class="card test-card h-100">
+                <div class="card-body text-center">
+                    <div class="test-icon">
+                        {% if test_id == 'toeic' %}
+                            <i class="bi bi-briefcase-fill text-primary"></i>
+                        {% else %}
+                            <i class="bi bi-mortarboard-fill text-success"></i>
+                        {% endif %}
+                    </div>
+                    <h3 class="card-title">{{ test_name }} Test</h3>
+                    <p class="card-text">
+                        {% if test_id == 'toeic' %}
+                            Simulates the TOEIC test format with business and professional English focus.
+                        {% else %}
+                            Simulates the Cambridge English exams with academic and general English focus.
+                        {% endif %}
+                    </p>
+                    
+                    <hr>
+                    <h5 class="mb-3">Select a Topic:</h5>
+                    <div class="mb-4">
+                        {% for topic in topics %}
+                        <a href="{% url 'mock_test_start' test_id %}?topic={{ topic }}" 
+                           class="badge bg-light text-dark border topic-badge">
+                            {{ topic|title }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <h2 class="mb-3">Your Test History</h2>
+    <div class="card">
+        <div class="card-body">
+            <a href="{% url 'mock_test_history' %}" class="btn btn-outline-primary">
+                <i class="bi bi-clock-history"></i> View Your Past Test Results
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
